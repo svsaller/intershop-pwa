@@ -33,7 +33,7 @@ describe('Basket Cost Summary Component', () => {
       imports: [TranslateModule.forRoot()],
       providers: [{ provide: AccountFacade, useFactory: () => instance(accountFacade) }],
     })
-      // tslint:disable-next-line: no-any
+      /* eslint-disable  @typescript-eslint/no-explicit-any */
       .configureCompiler({ preserveWhitespaces: true } as any)
       .compileComponents();
   });

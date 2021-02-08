@@ -41,7 +41,7 @@ describe('Sfe Metadata Wrapper', () => {
     component.setSfeMetadata(metadata);
     fixture.detectChanges();
 
-    expect(element.hasAttribute('data-' + dataAttrName)).toBeTruthy();
+    expect(element.hasAttribute(`data-${dataAttrName}`)).toBeTruthy();
 
     const rawData = element.dataset.sfe;
     const data = JSON.parse(rawData);

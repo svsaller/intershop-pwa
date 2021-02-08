@@ -13,7 +13,7 @@ describe('Sfe Mapper', () => {
   describe('tree mappings with getDomTree and reduceDomTree', () => {
     it.each(domDataProvider)(
       `should extract the tree structure for DOM with %s`,
-      // tslint:disable-next-line:no-any
+      /* eslint-disable  @typescript-eslint/no-explicit-any */
       (_, data: { html: string; tree: any; reducedTree: any }) => {
         const dom = createDocumentFromHTML(data.html).querySelector('body').firstChild;
         const tree = SfeMapper.getDomTree(dom);
@@ -24,7 +24,7 @@ describe('Sfe Mapper', () => {
 
     it.each(domDataProvider)(
       `should reduce the tree structure for %s`,
-      // tslint:disable-next-line:no-any
+      /* eslint-disable  @typescript-eslint/no-explicit-any */
       (_, data: { html: string; tree: any; reducedTree: any }) => {
         const reducedTree = SfeMapper.reduceDomTree(data.tree);
 

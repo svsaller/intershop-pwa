@@ -13,8 +13,10 @@ import { SfeMetadata } from './sfe.types';
  *              }
  * }
  */
+
+/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @angular-eslint/component-class-suffix */
 @Component({ template: '' })
-// tslint:disable-next-line: component-class-suffix
 export class SfeMetadataWrapper {
   @HostBinding('attr.data-sfe') sfeMetadataAttribute: string;
 

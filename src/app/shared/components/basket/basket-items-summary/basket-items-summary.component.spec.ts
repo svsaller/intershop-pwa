@@ -21,7 +21,7 @@ describe('Basket Items Summary Component', () => {
 
   beforeEach(async () => {
     const shoppingFacade = mock(ShoppingFacade);
-    when(shoppingFacade.product$(anything(), anything())).thenCall(sku => of({ sku, name: 'SKU:' + sku }));
+    when(shoppingFacade.product$(anything(), anything())).thenCall(sku => of({ sku, name: `SKU:${sku}` }));
 
     await TestBed.configureTestingModule({
       declarations: [

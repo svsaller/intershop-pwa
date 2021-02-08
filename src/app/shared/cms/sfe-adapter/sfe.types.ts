@@ -24,6 +24,6 @@ export interface SfeMetadataNode extends SfeMetadata {
 
 export interface DesignViewMessage {
   type: string;
-  // tslint:disable-next-line:no-any
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   payload?: any;
 }
