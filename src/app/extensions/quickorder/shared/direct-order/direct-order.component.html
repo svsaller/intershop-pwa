@@ -1,0 +1,19 @@
+<h3>{{ 'shopping_cart.direct_order.heading' | translate }}</h3>
+<form [formGroup]="directOrderForm" (ngSubmit)="onSubmit()">
+  <div class="row">
+    <div class="col-md-9">
+      <formly-form [form]="directOrderForm" [fields]="fields" [model]="model" class="row"></formly-form>
+    </div>
+    <div class="col-md-3 list-item">
+      <button type="submit" class="btn btn-primary" name="addToCart" [disabled]="disabledAddToCart">
+        {{ 'quickorder.page.add.cart' | translate }}
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="list-item-row">
+  <a class="btn btn-link" rel="quick-order" routerLink="/quick-order">{{
+    'shopping_cart.direct_order.link.multipleItems' | translate
+  }}</a>
+</div>
