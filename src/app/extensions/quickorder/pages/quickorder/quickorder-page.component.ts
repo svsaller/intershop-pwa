@@ -1,50 +1,13 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { AsyncValidatorFn, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { EMPTY, Observable } from 'rxjs';
-import { debounceTime, map, mapTo, switchMap, tap } from 'rxjs/operators';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
 
 import { CheckoutFacade } from 'ish-core/facades/checkout.facade';
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
-import { ProductCompletenessLevel, ProductHelper } from 'ish-core/models/product/product.model';
-import { SpecialValidators } from 'ish-shared/forms/validators/special-validators';
+
+import { QuickOrderFacade } from '../../facades/quick-order.facade';
 
 declare type CsvStatusType = 'Default' | 'ValidFormat' | 'InvalidFormat' | 'IncorrectInput';
-
-function validateProduct(shoppingFacade: ShoppingFacade, cdRef: ChangeDetectorRef): AsyncValidatorFn {
-  return (control: FormGroup) =>
-    (control.valueChanges &&
-      control.valueChanges.pipe(
-        debounceTime(500),
-        map(({ sku }) => sku),
-        switchMap(sku => shoppingFacade.product$(sku, ProductCompletenessLevel.List)),
-        tap(product => {
-          const failed = ProductHelper.isFailedLoading(product);
-          control.get('sku').setErrors(failed ? { not_exists: true } : undefined);
-          const quantityControl = control.get('quantity') as FormControl;
-          quantityControl.setValidators(
-            failed
-              ? []
-              : [
-                  Validators.required,
-                  SpecialValidators.integer,
-                  Validators.min(product.minOrderQuantity),
-                  Validators.max(product.maxOrderQuantity),
-                ]
-          );
-
-          control.get('product').setValue(product, { emitEvent: false });
-
-          if (!quantityControl.value) {
-            quantityControl.setValue(product.minOrderQuantity, { emitEvent: false });
-          }
-
-          control.updateValueAndValidity({ emitEvent: false });
-          cdRef.markForCheck();
-        }),
-        mapTo(undefined)
-      )) ||
-    EMPTY;
-}
 
 @Component({
   selector: 'ish-quickorder-page',
@@ -66,7 +29,8 @@ export class QuickorderPageComponent implements OnInit {
     private shoppingFacade: ShoppingFacade,
     private checkoutFacade: CheckoutFacade,
     private qf: FormBuilder,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private quickOrderFacade: QuickOrderFacade
   ) {}
 
   ngOnInit(): void {
@@ -125,7 +89,7 @@ export class QuickorderPageComponent implements OnInit {
   createLine(): FormGroup {
     return this.qf.group(
       { sku: [''], quantity: [''], product: [{}] },
-      { asyncValidators: validateProduct(this.shoppingFacade, this.cdRef) }
+      { asyncValidators: this.quickOrderFacade.validateProductFunction(this.cdRef) }
     );
   }
 
