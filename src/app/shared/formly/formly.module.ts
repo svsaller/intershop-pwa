@@ -23,6 +23,7 @@ import { CheckboxFieldComponent } from './types/checkbox-field/checkbox-field.co
 import { EmailFieldComponent } from './types/email-field/email-field.component';
 import { FieldsetFieldComponent } from './types/fieldset-field/fieldset-field.component';
 import { PasswordFieldComponent } from './types/password-field/password-field.component';
+import { RadioButtonsFieldComponent } from './types/radio-buttons-field/radio-buttons-field.component';
 import { SelectFieldComponent } from './types/select-field/select-field.component';
 import { TextInputFieldComponent } from './types/text-input-field/text-input-field.component';
 import { TextareaFieldComponent } from './types/textarea-field/textarea-field.component';
@@ -117,6 +118,7 @@ import { ValidationWrapperComponent } from './wrappers/validation-wrapper/valida
     HorizontalWrapperComponent,
     InputAddonWrapperComponent,
     PasswordFieldComponent,
+    RadioButtonsFieldComponent,
     SelectFieldComponent,
     TextInputFieldComponent,
     TextareaDescriptionWrapperComponent,
