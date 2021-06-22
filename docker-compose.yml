@@ -14,7 +14,7 @@ services:
         serviceWorker: 'false'
     environment:
       - LOGGING=on
-      - ICM_BASE_URL=http://pwa-review.northeurope.cloudapp.azure.com:8081
+      - ICM_BASE_URL
       # - PROXY_ICM=true
       - TRUST_ICM=true
       # - PROMETHEUS=on
@@ -45,7 +45,6 @@ services:
         .+\.de:
             channel: inSPIRED-inTRONICS-Site
             lang: de_DE
-            identityProvider: Auth0
         .+\.com:
             channel: inSPIRED-inTRONICS_Business-Site
             features: quoting,businessCustomerRegistration,advancedVariationHandling
