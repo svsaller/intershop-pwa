@@ -78,7 +78,7 @@ import { ValidationWrapperComponent } from './wrappers/validation-wrapper/valida
           component: FieldsetFieldComponent,
         },
         {
-          name: 'radio-buttons-field',
+          name: 'ish-radio-buttons-field',
           component: RadioButtonsFieldComponent,
         },
       ],
