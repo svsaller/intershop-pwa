@@ -11,7 +11,7 @@ import { QuickOrderFacade } from '../../../facades/quick-order.facade';
 export class QuickorderAddProductsFormComponent implements OnInit {
   @Output() productsToAdd = new EventEmitter<{ sku: string; quantity: number }[]>();
   quickOrderForm: FormGroup;
-  model = { addProducts: [{}, {}, {}, {}, {}] };
+  model: { addProducts: { sku: string; quantity: number }[] };
   options: FormlyFormOptions = {};
   fields: FormlyFieldConfig[] = [
     {
@@ -19,9 +19,11 @@ export class QuickorderAddProductsFormComponent implements OnInit {
       type: 'repeat',
       templateOptions: {
         addText: 'quickorder.page.add.row',
+        add5Text: 'quickorder.link.text',
         removeText: 'quickorder.page.remove.row',
       },
       fieldArray: {
+        fieldGroupClassName: 'row list-item-row py-2',
         fieldGroup: [
           {
             key: 'sku',
@@ -74,14 +76,10 @@ export class QuickorderAddProductsFormComponent implements OnInit {
 
   numberOfRows = 5;
 
-  constructor(private qf: FormBuilder, private cdRef: ChangeDetectorRef, private quickorderFacade: QuickOrderFacade) {}
+  constructor(private quickorderFacade: QuickOrderFacade) {}
 
   ngOnInit() {
-    this.quickOrderForm = this.qf.group({
-      quickOrderLines: this.qf.array([]),
-    });
-
-    this.addRows(this.numberOfRows);
+    this.initModel();
 
     // Dummy data to test search suggestion styling, typing 1234 will show the drop down with this product
     this.searchSuggestions.push({
@@ -92,43 +90,30 @@ export class QuickorderAddProductsFormComponent implements OnInit {
     });
   }
 
-  addRows(rowsToAdd: number) {
-    for (let i = 0; i < rowsToAdd; i++) {
-      this.quickOrderLines.push(this.createLine());
+  initModel() {
+    this.model = { addProducts: [] };
+    for (let i = 0; i < this.numberOfRows; i++) {
+      this.model.addProducts.push({ sku: '', quantity: undefined });
     }
   }
 
-  createLine(): FormGroup {
-    return this.qf.group(
-      { sku: [''], quantity: [''], product: [{}] },
-      { asyncValidators: this.quickorderFacade.validateProductFunction(this.cdRef) }
-    );
-  }
-
-  deleteItem(index: number) {
-    this.quickOrderLines.removeAt(index);
-  }
-
   resetFields() {
-    this.quickOrderLines.reset([this.createLine()]);
-  }
-
-  get quickOrderLines() {
-    return this.quickOrderForm.get('quickOrderLines') as FormArray;
+    this.initModel();
   }
 
   get quickOrderFormDisabled() {
-    return (
-      this.quickOrderForm.invalid ||
-      !this.quickOrderLines.value[0].sku ||
-      !parseInt(this.quickOrderLines.value[0].quantity, 10)
-    );
+    return '';
+    // return (
+    //   this.quickOrderForm.invalid ||
+    //   !this.quickOrderLines.value[0].sku ||
+    //   !parseInt(this.quickOrderLines.value[0].quantity, 10)
+    // );
   }
 
   onAddProducts() {
-    const filledLines = this.quickOrderLines.value.filter(
-      (p: { sku: string; quantity: number }) => !!p.sku && !!p.quantity
-    );
-    this.productsToAdd.emit(filledLines);
+    // const filledLines = this.quickOrderLines.value.filter(
+    //   (p: { sku: string; quantity: number }) => !!p.sku && !!p.quantity
+    // );
+    // this.productsToAdd.emit(filledLines);
   }
 }
