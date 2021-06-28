@@ -4,7 +4,9 @@
     <div class="col-md-2 list-header-item no-seperator">{{ 'quickorder.page.product.quantity' | translate }}</div>
   </div>
 
-  <div class="pt-1">
+  <formly-form [model]="model" [fields]="fields" [options]="options" [form]="quickOrderForm"></formly-form>
+
+  <!-- <div class="pt-1">
     <div formArrayName="quickOrderLines">
       <div
         class="row list-item-row py-2"
@@ -81,9 +83,9 @@
       }}</a>
       <hr class="mt-2 mb-4" />
     </div>
-  </div>
+  </div> -->
   <div>
-    <button
+    <!-- <button
       type="submit"
       class="btn btn-primary"
       [disabled]="quickOrderFormDisabled"
@@ -93,6 +95,6 @@
     </button>
     <button type="reset" class="btn btn-link" (click)="resetFields()">
       {{ 'quickorder.page.reset.form' | translate }}
-    </button>
+    </button> -->
   </div>
 </form>

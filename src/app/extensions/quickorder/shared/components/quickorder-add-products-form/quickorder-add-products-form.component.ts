@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { QuickOrderFacade } from '../../../facades/quick-order.facade';
 
 @Component({
@@ -10,6 +11,64 @@ import { QuickOrderFacade } from '../../../facades/quick-order.facade';
 export class QuickorderAddProductsFormComponent implements OnInit {
   @Output() productsToAdd = new EventEmitter<{ sku: string; quantity: number }[]>();
   quickOrderForm: FormGroup;
+  model = { addProducts: [{}, {}, {}, {}, {}] };
+  options: FormlyFormOptions = {};
+  fields: FormlyFieldConfig[] = [
+    {
+      key: 'addProducts',
+      type: 'repeat',
+      templateOptions: {
+        addText: 'quickorder.page.add.row',
+        removeText: 'quickorder.page.remove.row',
+      },
+      fieldArray: {
+        fieldGroup: [
+          {
+            key: 'sku',
+            type: 'ish-input-field',
+            className: 'col-sm-9 list-item search-container',
+            templateOptions: {
+              placeholder: 'shopping_cart.direct_order.item_placeholder',
+              autocomplete: true,
+            },
+            expressionProperties: {
+              // 'templateOptions.required': () => !!this.model.quantity,
+            },
+            // asyncValidators: {
+            //   validProduct: {
+            //     expression: (control: FormControl) => this.quickorderFacade.validateProductFunction(this.cdRef),
+            //     message: 'shopping_cart.direct_order.error.productnotfound',
+            //   },
+            // },
+            validation: {
+              messages: {
+                required: 'shopping_cart.direct_order.error.quantitywithoutsku',
+              },
+            },
+          },
+          {
+            key: 'quantity',
+            type: 'ish-input-field',
+            className: 'col-sm-3 list-item',
+            templateOptions: {
+              type: 'number',
+              placeholder: 'shopping_cart.direct_order.quantity_placeholder',
+              hideRequiredMarker: true,
+              min: 1,
+            },
+            expressionProperties: {
+              // 'templateOptions.required': () => !!this.model.sku,
+            },
+            validation: {
+              messages: {
+                required: 'shopping_cart.direct_order.error.skuwithoutquantity',
+              },
+            },
+          },
+        ],
+      },
+    },
+  ];
 
   searchSuggestions: { imgPath: string; sku: string; name: string }[] = [];
 
