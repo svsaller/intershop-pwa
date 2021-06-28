@@ -46,9 +46,9 @@ This way, the setting of the deployment URL becomes a runtime setting and can be
 
 ### Building with Dynamic Deploy URL
 
-The PWA client side application has to be built using `ng build ... --deploy-url=DEPLOY_URL_PLACEHOLDER`, which will introduce a placeholder to all deployment dependant functionality.
+The PWA client-side application has to be built using `ng build ... --deploy-url=DEPLOY_URL_PLACEHOLDER`, which will introduce a placeholder for all deployment-dependent functionality.
 
-This placeholder is then replaced by the SSR process dynamically using the environment variable `DEPLOY_URL` (i.e. by setting it on the [SSR container][guide-ssr-container]).
+This placeholder is then dynamically replaced by the SSR process using the environment variable `DEPLOY_URL` (i.e. by setting it on the [SSR container][guide-ssr-container]).
 If no `DEPLOY_URL` is supplied, the fallback `/` is applied.
 
 This placeholder can also be replaced statically when no SSR process is used in the deployment by running the script `npx ts-node scripts/set-deploy-url <deploy-url>`.
@@ -63,8 +63,8 @@ With this new feature, some complex deployment scenarios can be solved with the 
 
 ### CDN Support
 
-If you want to deploy all static resources of the Intershop PWA to a [Content Delivery Network](https://en.wikipedia.org/wiki/Content_delivery_network), you can use the above build steps to set the deploy URL via script on the build output.
-Serving the resources with a CDN will reduce the load on the PWA significantly if certain pages can also be stored pre-rendered or if the experimental [Service Worker][concept-pwa-service-worker] support is used.
+If you want to deploy all static resources of the Intershop PWA to a [Content Delivery Network](https://en.wikipedia.org/wiki/Content_delivery_network), you can use the above build steps to set the deploy URL via script in the build output.
+Delivering resources via a CDN significantly reduces the load on the PWA if certain pages can also be stored pre-rendered or if the experimental [Service Worker][concept-pwa-service-worker] support is used.
 
 ### Embed PWA with Proxy on Website
 
@@ -72,13 +72,13 @@ Consider the following deployment scenario:
 
 You want to use the Intershop PWA as part of a bigger portal to provide a shopping experience.
 However, not all of the product pages are to be handled by the PWA, as you want to use a different integration from the portal that is already available.
-Most probably all product pages have a similar URL pattern and should be available from the same domain for SEO reasons.
+Most likely, all product pages have a similar URL pattern and should be available from the same domain for SEO reasons.
 
 This scenario would mean that the portal and the Intershop PWA would share routes similar to the [Hybrid Approach][concept-hybrid-approach].
 To set this up manually, a lot of rewriting for static PWA assets would have to be set up in the portal's reverse proxy, so that Intershop PWA client applications can boot up correctly.
 
-By setting a deployment URL, only the incoming routing for server-side rendering would be targeted at the portal reverse proxy.
-After parsing the response, the client side application pulls all necessary static assets and JavaScript chunks from the deployment URL directly.
+By setting a deployment URL, only the incoming routing for server-side rendering would be targeted at the portal's reverse proxy.
+After parsing the response, the client-side application pulls all necessary static assets and JavaScript chunks directly from the deployment URL.
 
 # Further References
 
