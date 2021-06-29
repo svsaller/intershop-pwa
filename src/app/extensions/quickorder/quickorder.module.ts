@@ -5,7 +5,7 @@ import { TextInputFieldComponent } from 'ish-shared/formly/types/text-input-fiel
 import { ColumnWrapperComponent } from 'ish-shared/formly/wrappers/column-wrapper/column-wrapper.component';
 import { SharedModule } from 'ish-shared/shared.module';
 
-import { QuickorderAddProductsFormComponent } from './shared/components/quickorder-add-products-form/quickorder-add-products-form.component';
+import { QuickorderAddProductsFormComponent } from './shared/quickorder-add-products-form/quickorder-add-products-form.component';
 import { HeaderQuickorderComponent } from './shared/header-quickorder/header-quickorder.component';
 import { QuickorderCsvFormComponent } from './shared/quickorder-csv-form/quickorder-csv-form.component';
 import { QuickorderRepeatFormSectionComponent } from './shared/quickorder-repeat-form-section/quickorder-repeat-form-section.component';

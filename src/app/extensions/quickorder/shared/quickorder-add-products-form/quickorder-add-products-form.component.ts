@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
-import { QuickOrderFacade } from '../../../facades/quick-order.facade';
+import { QuickOrderFacade } from '../../facades/quick-order.facade';
+
+declare interface AddProducts {
+  sku: string;
+  quantity: number;
+}
 
 @Component({
   selector: 'ish-quickorder-add-products-form',
@@ -9,9 +14,9 @@ import { QuickOrderFacade } from '../../../facades/quick-order.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuickorderAddProductsFormComponent implements OnInit {
-  @Output() productsToAdd = new EventEmitter<{ sku: string; quantity: number }[]>();
+  @Output() productsToAdd = new EventEmitter<AddProducts[]>();
   quickOrderForm: FormGroup = new FormGroup({});
-  model: { addProducts: { sku: string; quantity: number }[] } = { addProducts: [] };
+  model: { addProducts: AddProducts[] } = { addProducts: [] };
   options: FormlyFormOptions = {};
   fields: FormlyFieldConfig[] = [
     {
@@ -29,24 +34,15 @@ export class QuickorderAddProductsFormComponent implements OnInit {
             key: 'sku',
             type: 'ish-input-field',
             className: 'col-sm-9 list-item search-container',
-            templateOptions: {
-              placeholder: 'shopping_cart.direct_order.item_placeholder',
-              autocomplete: true,
-            },
-            expressionProperties: {
-              // 'templateOptions.required': () => !!this.model.quantity,
-            },
+            // expressionProperties: {
+            //   'templateOptions.required': (group: AddProducts) => group.quantity !== undefined,
+            // },
             // asyncValidators: {
             //   validProduct: {
             //     expression: (control: FormControl) => this.quickorderFacade.validateProductFunction(this.cdRef),
             //     message: 'shopping_cart.direct_order.error.productnotfound',
             //   },
             // },
-            validation: {
-              messages: {
-                required: 'shopping_cart.direct_order.error.quantitywithoutsku',
-              },
-            },
           },
           {
             key: 'quantity',
@@ -54,16 +50,13 @@ export class QuickorderAddProductsFormComponent implements OnInit {
             className: 'col-sm-3 list-item',
             templateOptions: {
               type: 'number',
-              placeholder: 'shopping_cart.direct_order.quantity_placeholder',
-              hideRequiredMarker: true,
-              min: 1,
             },
             expressionProperties: {
-              // 'templateOptions.required': () => !!this.model.sku,
+              'templateOptions.required': (group: AddProducts) => group.sku !== undefined,
             },
             validation: {
               messages: {
-                required: 'shopping_cart.direct_order.error.skuwithoutquantity',
+                required: 'product.quantity.notempty.text',
               },
             },
           },
@@ -80,7 +73,6 @@ export class QuickorderAddProductsFormComponent implements OnInit {
 
   ngOnInit() {
     this.initModel();
-    console.log(this.model);
 
     // Dummy data to test search suggestion styling, typing 1234 will show the drop down with this product
     this.searchSuggestions.push({
@@ -112,9 +104,7 @@ export class QuickorderAddProductsFormComponent implements OnInit {
   }
 
   onAddProducts() {
-    const filledLines = this.model.addProducts.filter(
-      (p: { sku: string; quantity: number }) => !!p.sku && !!p.quantity
-    );
+    const filledLines = this.model.addProducts.filter((p: AddProducts) => !!p.sku && !!p.quantity);
     this.productsToAdd.emit(filledLines);
     this.resetFields();
   }
