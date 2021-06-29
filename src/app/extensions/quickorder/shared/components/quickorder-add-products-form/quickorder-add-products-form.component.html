@@ -6,14 +6,9 @@
 
   <formly-form [model]="model" [fields]="fields" [options]="options" [form]="quickOrderForm" class="pt-1"></formly-form>
 
-  <!-- <button
-      type="submit"
-      class="btn btn-primary"
-      [disabled]="quickOrderFormDisabled"
-      data-testing-id="add-form-to-cart"
-    >
-      {{ 'quickorder.page.add.cart' | translate }}
-    </button>-->
+  <button type="submit" class="btn btn-primary" data-testing-id="add-form-to-cart">
+    {{ 'quickorder.page.add.cart' | translate }}
+  </button>
   <button type="reset" class="btn btn-link" (click)="resetFields()">
     {{ 'quickorder.page.reset.form' | translate }}
   </button>

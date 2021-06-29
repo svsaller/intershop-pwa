@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { QuickOrderFacade } from '../../../facades/quick-order.facade';
 
@@ -10,8 +10,8 @@ import { QuickOrderFacade } from '../../../facades/quick-order.facade';
 })
 export class QuickorderAddProductsFormComponent implements OnInit {
   @Output() productsToAdd = new EventEmitter<{ sku: string; quantity: number }[]>();
-  quickOrderForm: FormGroup;
-  model: { addProducts: { sku: string; quantity: number }[] };
+  quickOrderForm: FormGroup = new FormGroup({});
+  model: { addProducts: { sku: string; quantity: number }[] } = { addProducts: [] };
   options: FormlyFormOptions = {};
   fields: FormlyFieldConfig[] = [
     {
@@ -80,6 +80,7 @@ export class QuickorderAddProductsFormComponent implements OnInit {
 
   ngOnInit() {
     this.initModel();
+    console.log(this.model);
 
     // Dummy data to test search suggestion styling, typing 1234 will show the drop down with this product
     this.searchSuggestions.push({
@@ -111,9 +112,10 @@ export class QuickorderAddProductsFormComponent implements OnInit {
   }
 
   onAddProducts() {
-    // const filledLines = this.quickOrderLines.value.filter(
-    //   (p: { sku: string; quantity: number }) => !!p.sku && !!p.quantity
-    // );
-    // this.productsToAdd.emit(filledLines);
+    const filledLines = this.model.addProducts.filter(
+      (p: { sku: string; quantity: number }) => !!p.sku && !!p.quantity
+    );
+    this.productsToAdd.emit(filledLines);
+    this.resetFields();
   }
 }

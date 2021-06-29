@@ -8,8 +8,9 @@ import { FieldArrayType } from '@ngx-formly/core';
 })
 export class QuickorderRepeatFormSectionComponent extends FieldArrayType {
   addMultipleRows(rows: number) {
+    console.log(this.model);
     for (let i = 0; i < rows; i++) {
-      this.add();
+      this.add(this.model.length, { sku: '', quantity: undefined });
     }
   }
 }
