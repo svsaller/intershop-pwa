@@ -22,6 +22,7 @@ import { CaptchaFieldComponent } from './types/captcha-field/captcha-field.compo
 import { CheckboxFieldComponent } from './types/checkbox-field/checkbox-field.component';
 import { EmailFieldComponent } from './types/email-field/email-field.component';
 import { FieldsetFieldComponent } from './types/fieldset-field/fieldset-field.component';
+import { NumberInputFieldComponent } from './types/number-input-field/number-input-field.component';
 import { PasswordFieldComponent } from './types/password-field/password-field.component';
 import { RadioFieldComponent } from './types/radio-field/radio-field.component';
 import { SelectFieldComponent } from './types/select-field/select-field.component';
@@ -46,6 +47,11 @@ import { ValidationWrapperComponent } from './wrappers/validation-wrapper/valida
         {
           name: 'ish-text-input-field',
           component: TextInputFieldComponent,
+          wrappers: ['form-field-horizontal', 'validation'],
+        },
+        {
+          name: 'ish-number-input-field',
+          component: NumberInputFieldComponent,
           wrappers: ['form-field-horizontal', 'validation'],
         },
         {
@@ -124,6 +130,7 @@ import { ValidationWrapperComponent } from './wrappers/validation-wrapper/valida
     HorizontalCheckboxWrapperComponent,
     HorizontalWrapperComponent,
     InputAddonWrapperComponent,
+    NumberInputFieldComponent,
     PasswordFieldComponent,
     RadioFieldComponent,
     RadioHorizontalWrapperComponent,
@@ -153,6 +160,7 @@ import { ValidationWrapperComponent } from './wrappers/validation-wrapper/valida
   exports: [
     CaptchaFieldComponent,
     FormlyBaseModule,
+    NumberInputFieldComponent,
     SelectFieldComponent,
     TextInputFieldComponent,
     TextareaFieldComponent,
