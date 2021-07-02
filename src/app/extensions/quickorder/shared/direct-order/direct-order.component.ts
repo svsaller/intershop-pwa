@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/
 import { FormControl, FormGroup } from '@angular/forms';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { TranslateService } from '@ngx-translate/core';
-import { of, Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { debounceTime, mapTo, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
@@ -29,7 +29,7 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
         autocomplete: true,
       },
       expressionProperties: {
-        'templateOptions.required': () => !!this.model.quantity,
+        'templateOptions.required': () => (!this.directOrderForm.untouched ? !!this.model.quantity : false),
       },
       asyncValidators: {
         validProduct: {
@@ -91,7 +91,7 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
 
   onSubmit() {
     this.shoppingFacade.addProductToBasket(this.model.sku, this.model.quantity);
-    this.directOrderForm.reset();
+    this.directOrderForm.reset({ quantity: 1 });
   }
 
   private checkDisabledStates(onLoad?: boolean) {
