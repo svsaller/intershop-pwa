@@ -1,8 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
+import { MockComponent } from 'ng-mocks';
 import { instance, mock } from 'ts-mockito';
 
+import { ProductContextFacade } from 'ish-core/facades/product-context.facade';
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
+import { ProductQuantityComponent } from 'ish-shared/components/product/product-quantity/product-quantity.component';
 import { FormlyTestingModule } from 'ish-shared/formly/dev/testing/formly-testing.module';
 
 import { DirectOrderComponent } from './direct-order.component';
@@ -15,8 +18,11 @@ describe('Direct Order Component', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FormlyTestingModule, TranslateModule.forRoot()],
-      declarations: [DirectOrderComponent],
-      providers: [{ provide: ShoppingFacade, useFactory: () => instance(mock(ShoppingFacade)) }],
+      declarations: [DirectOrderComponent, MockComponent(ProductQuantityComponent)],
+      providers: [
+        { provide: ShoppingFacade, useFactory: () => instance(mock(ShoppingFacade)) },
+        { provide: ProductContextFacade, useFactory: () => instance(mock(ProductContextFacade)) },
+      ],
     }).compileComponents();
   });
 
