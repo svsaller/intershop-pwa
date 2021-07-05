@@ -1,10 +1,15 @@
 .counter-input {
   position: relative;
 
-  button {
+  div {
     position: absolute;
     width: auto;
     margin: 0;
+
+    .disabled {
+      color: rgb(108, 117, 125);
+      cursor: default;
+    }
   }
 
   .decrease-button {

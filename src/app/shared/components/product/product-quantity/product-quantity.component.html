@@ -23,24 +23,24 @@
     </ng-template>
     <ng-template ngSwitchDefault>
       <div class="counter-input">
-        <button
+        <div
           class="btn btn-link decrease-button"
           (click)="decrease()"
-          [disabled]="cannotDecrease$ | async"
+          [ngClass]="(cannotDecrease$ | async) ? 'disabled' : ''"
           [attr.data-testing-id]="'decrease-quantity-' + id"
           translate
         >
           product.quantity.decrease.text
-        </button>
-        <button
+        </div>
+        <div
           class="btn btn-link increase-button"
           (click)="increase()"
-          [disabled]="cannotIncrease$ | async"
+          [ngClass]="(cannotIncrease$ | async) ? 'disabled' : ''"
           [attr.data-testing-id]="'increase-quantity-' + id"
           translate
         >
           product.quantity.increase.text
-        </button>
+        </div>
         <input
           class="form-control text-center"
           [id]="id"
