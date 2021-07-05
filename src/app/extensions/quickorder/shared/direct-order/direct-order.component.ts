@@ -94,6 +94,7 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private setContext() {

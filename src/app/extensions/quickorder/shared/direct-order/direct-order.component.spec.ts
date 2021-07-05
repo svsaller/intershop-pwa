@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { MockComponent } from 'ng-mocks';
-import { instance, mock } from 'ts-mockito';
+import { of } from 'rxjs';
+import { instance, mock, when } from 'ts-mockito';
 
 import { ProductContextFacade } from 'ish-core/facades/product-context.facade';
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
@@ -14,6 +15,7 @@ describe('Direct Order Component', () => {
   let component: DirectOrderComponent;
   let fixture: ComponentFixture<DirectOrderComponent>;
   let element: HTMLElement;
+  const context = mock(ProductContextFacade);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -21,9 +23,11 @@ describe('Direct Order Component', () => {
       declarations: [DirectOrderComponent, MockComponent(ProductQuantityComponent)],
       providers: [
         { provide: ShoppingFacade, useFactory: () => instance(mock(ShoppingFacade)) },
-        { provide: ProductContextFacade, useFactory: () => instance(mock(ProductContextFacade)) },
+        { provide: ProductContextFacade, useFactory: () => instance(context) },
       ],
     }).compileComponents();
+
+    when(context.select('quantity')).thenReturn(of());
   });
 
   beforeEach(() => {
