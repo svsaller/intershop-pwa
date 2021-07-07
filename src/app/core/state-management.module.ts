@@ -20,6 +20,7 @@ import { ShoppingStoreModule } from './store/shopping/shopping-store.module';
   imports: [
     BrowserTransferStateModule,
     CoreStoreModule,
+    // to disable the Store Devtools In Production implement solution https://ngrx.io/guide/store-devtools/recipes/exclude
     StoreDevtoolsModule.instrument({
       maxAge: PRODUCTION_MODE ? 25 : 200,
       logOnly: PRODUCTION_MODE, // Restrict extension to log-only mode
