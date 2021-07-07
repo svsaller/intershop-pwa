@@ -21,7 +21,9 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
   directOrderForm = new FormGroup({});
   disabledAddToCart = true;
   fields: FormlyFieldConfig[];
-  model: { sku: string };
+  model = { sku: '' };
+  hasQuantityError$: Observable<boolean>;
+  loading = false;
 
   private destroy$ = new Subject();
 
@@ -35,8 +37,8 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.fields = this.getFields();
-    this.model = this.getModel();
     this.setContext();
+    this.hasQuantityError$ = this.context.select('hasQuantityError');
   }
 
   ngOnDestroy() {
@@ -48,7 +50,6 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
     this.context.addToBasket();
     this.directOrderForm.reset();
     this.setContext();
-    this.checkDisabledStates();
   }
 
   private getFields(): FormlyFieldConfig[] {
@@ -70,25 +71,20 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
             field.form
               .get('sku')
               .valueChanges.pipe(whenTruthy(), takeUntil(this.destroy$))
-              .subscribe(sku => {
-                this.context.set('sku', () => sku);
-                this.checkDisabledStates();
-              });
+              .subscribe(sku => this.context.set('sku', () => sku));
           },
         },
         asyncValidators: {
           validProduct: {
             expression: (control: FormControl) =>
               control.valueChanges.pipe(
-                tap(() => {
-                  this.checkDisabledStates(true);
-                }),
+                tap(() => (this.loading = true)),
                 debounceTime(500),
                 switchMap(() => this.shoppingFacade.product$(control.value, ProductCompletenessLevel.List)),
                 tap(product => {
                   const failed = ProductHelper.isFailedLoading(product);
                   control.setErrors(failed ? { validProduct: false } : undefined);
-                  this.checkDisabledStates(false);
+                  this.loading = false;
                 }),
                 mapTo(undefined)
               ),
@@ -104,10 +100,6 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
     ];
   }
 
-  private getModel(): { sku: string } {
-    return { sku: '' };
-  }
-
   private setContext() {
     this.context.set('sku', () => ' ');
     this.context.set('quantity', () => 1);
@@ -115,14 +107,5 @@ export class DirectOrderComponent implements OnInit, OnDestroy {
     this.context.set('maxQuantity', () => 100);
     this.context.set('stepQuantity', () => 1);
     this.context.set('hasQuantityError', () => false);
-  }
-
-  private checkDisabledStates(onLoad?: boolean) {
-    this.disabledAddToCart =
-      this.directOrderForm.invalid ||
-      this.directOrderForm.pristine ||
-      (this.context.get('quantity') === undefined && this.model.sku === undefined) ||
-      this.context.get('hasQuantityError') ||
-      onLoad;
   }
 }

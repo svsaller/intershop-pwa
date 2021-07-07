@@ -9,7 +9,11 @@
         <ish-product-quantity className="mw-100"></ish-product-quantity>
       </div>
       <div class="col-md-3 list-item">
-        <button type="submit" class="btn btn-primary" [disabled]="disabledAddToCart">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="this.directOrderForm.invalid || (hasQuantityError$ | async) || loading"
+        >
           {{ 'quickorder.page.add.cart' | translate }}
         </button>
       </div>
