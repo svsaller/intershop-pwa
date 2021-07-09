@@ -4,6 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 import { instance, mock, when } from 'ts-mockito';
 
+import { CheckoutFacade } from 'ish-core/facades/checkout.facade';
 import { ProductContextFacade } from 'ish-core/facades/product-context.facade';
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
 import { ProductQuantityComponent } from 'ish-shared/components/product/product-quantity/product-quantity.component';
@@ -15,18 +16,23 @@ describe('Direct Order Component', () => {
   let component: DirectOrderComponent;
   let fixture: ComponentFixture<DirectOrderComponent>;
   let element: HTMLElement;
+  let checkoutFacade: CheckoutFacade;
   const context = mock(ProductContextFacade);
 
   beforeEach(async () => {
+    checkoutFacade = mock(CheckoutFacade);
+
     await TestBed.configureTestingModule({
       imports: [FormlyTestingModule, TranslateModule.forRoot()],
       declarations: [DirectOrderComponent, MockComponent(ProductQuantityComponent)],
       providers: [
+        { provide: CheckoutFacade, useFactory: () => instance(checkoutFacade) },
         { provide: ShoppingFacade, useFactory: () => instance(mock(ShoppingFacade)) },
         { provide: ProductContextFacade, useFactory: () => instance(context) },
       ],
     }).compileComponents();
 
+    when(checkoutFacade.basketMaxItemQuantity$).thenReturn(of(100));
     when(context.select('quantity')).thenReturn(of());
   });
 

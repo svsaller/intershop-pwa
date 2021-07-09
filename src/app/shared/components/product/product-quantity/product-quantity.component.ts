@@ -15,7 +15,6 @@ import { ProductContextFacade } from 'ish-core/facades/product-context.facade';
 export class ProductQuantityComponent implements OnInit {
   @Input() type: 'input' | 'select' | 'counter' = 'counter';
   @Input() id: string = UUID.UUID();
-  @Input() className: string;
 
   visible$: Observable<boolean>;
   quantity$: Observable<number>;
@@ -38,8 +37,12 @@ export class ProductQuantityComponent implements OnInit {
     this.min$ = this.context.select('minQuantity');
     this.max$ = this.context.select('maxQuantity');
     this.step$ = this.context.select('stepQuantity');
-    this.hasQuantityError$ = this.context.select('hasQuantityError');
     this.quantityError$ = this.context.select('quantityError');
+
+    this.hasQuantityError$ = combineLatest([
+      this.context.select('hasQuantityError'),
+      this.context.select('product'),
+    ]).pipe(map(([hasError, product]) => hasError && !product?.failed));
 
     this.selectValues$ = combineLatest([this.min$, this.max$, this.step$]).pipe(
       map(([min, max, step]) => range(min, max + 1, step))

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FieldWrapper } from '@ngx-formly/core';
 
 @Component({
@@ -6,16 +6,4 @@ import { FieldWrapper } from '@ngx-formly/core';
   templateUrl: './validation-wrapper.component.html',
   changeDetection: ChangeDetectionStrategy.Default,
 })
-export class ValidationWrapperComponent extends FieldWrapper implements OnInit {
-  hideValidationIcons = false;
-
-  ngOnInit() {
-    this.to?.options?.forEach(options => {
-      options.find(option => {
-        if (option.hideValidationIcons) {
-          this.hideValidationIcons = true;
-        }
-      });
-    });
-  }
-}
+export class ValidationWrapperComponent extends FieldWrapper {}
