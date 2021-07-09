@@ -1,0 +1,9 @@
+<input
+  type="tel"
+  [formControl]="formControl"
+  class="form-control"
+  [formlyAttributes]="field"
+  [attr.data-testing-id]="field.key"
+  [pattern]="to?.pattern ? to.pattern : pattern"
+  [maxlength]="to?.maxlength ? to.maxlength : 20"
+/>
