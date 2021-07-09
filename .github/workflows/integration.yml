@@ -47,7 +47,7 @@ jobs:
         run: node schematics/customization/service-worker false
 
       - name: Build SSR
-        run: npm run build
+        run: npm run build:multi
 
       - name: Upload Build Output
         uses: actions/upload-artifact@v2
@@ -84,11 +84,9 @@ jobs:
         if: matrix.test == 'b2b'
         run: |
           echo "THEME=blue" >> $GITHUB_ENV
-          echo "ICM_CHANNEL=inSPIRED-inTRONICS_Business-Site" >> $GITHUB_ENV
-          echo "FEATURES=quoting,quickorder,orderTemplates,compare,recently,businessCustomerRegistration,punchout,advancedVariationHandling" >> $GITHUB_ENV
 
       - name: Start SSR
-        run: npm run serve &
+        run: npm run serve:multi &
 
       - name: Test Universal
         run: sh e2e/test-universal.sh
@@ -127,11 +125,9 @@ jobs:
         if: matrix.test == 'b2b'
         run: |
           echo "THEME=blue" >> $GITHUB_ENV
-          echo "ICM_CHANNEL=inSPIRED-inTRONICS_Business-Site" >> $GITHUB_ENV
-          echo "FEATURES=quoting,quickorder,orderTemplates,compare,recently,businessCustomerRegistration,punchout,advancedVariationHandling" >> $GITHUB_ENV
 
       - name: Start SSR
-        run: npm run serve &
+        run: npm run serve:multi &
 
       - name: Cypress
         uses: cypress-io/github-action@v2

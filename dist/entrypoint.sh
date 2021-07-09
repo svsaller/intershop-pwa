@@ -8,8 +8,7 @@ trap 'echo recieved KILL; exit 1' SIGKILL
 
 if [ -z "$*" ]
 then
-  node dist/server/main.js &
-  wait
+  pm2-runtime dist/ecosystem.yml
 else
   exec "$@"
 fi
