@@ -23,7 +23,8 @@ if (process.argv.length === 2 || process.argv[2] === 'server')
     )
   );
 
-const cores = require('os').cpus().length / 3 || 2;
+const cores = Math.round(require('os').cpus().length / 3) || 2;
+
 cp.execSync(`npx npm-run-all ngcc --max-parallel ${cores} --parallel ${builds.map(b => `"${b}"`).join(' ')}`, {
   stdio: 'inherit',
 });
