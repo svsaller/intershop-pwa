@@ -35,7 +35,7 @@ See also [Angular Style Guide](https://angular.io/guide/styleguide#style-05-15).
 
 ## Put as Little Logic Into `constructor` as Possible - Use `ngOnInit`
 
-See [The essential difference between Constructor and ngOnInit in Angular](https://indepth.dev/the-essential-difference-between-constructor-and-ngoninit-in-angular/) and [Angular constructor versus ngOnInit](https://ultimatecourses.com/blog/angular-constructor-ngoninit-lifecycle-hook).
+See [The essential difference between Constructor and ngOnInit in Angular](https://indepth.dev/posts/1119/the-essential-difference-between-constructor-and-ngoninit-in-angular) and [Angular constructor versus ngOnInit](https://ultimatecourses.com/blog/angular-constructor-ngoninit-lifecycle-hook).
 
 ## Use Property Binding to Bind Dynamic Values to Attributes or Properties
 
@@ -88,14 +88,14 @@ In this case the condition should look like this:
 
 ## Do Not Unsubscribe, Use Destroy Observable and takeUntil Instead
 
-Following the ideas of the article [RxJS: Don’t Unsubscribe](https://medium.com/@benlesh/rxjs-dont-unsubscribe-6753ed4fda87), the following pattern is used for ending subscriptions to observables that are not handled via async pipe in the templates.
+Following the ideas of the article [RxJS: Don’t Unsubscribe](https://benlesh.medium.com/rxjs-dont-unsubscribe-6753ed4fda87), the following pattern is used for ending subscriptions to observables that are not handled via async pipe in the templates.
 
 :heavy_check_mark: **'unsubscribe' via destroy\$ Subject**
 
 ```typescript
 export class AnyComponent implements OnInit, OnDestroy {
   ...
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   ...
   ngOnInit() {
     ...
@@ -110,7 +110,7 @@ export class AnyComponent implements OnInit, OnDestroy {
 }
 ```
 
-The TSLint rule `rxjs-prefer-angular-takeuntil` enforces the usage of a `destroy$` Subject with `takeUntil` when subscribing in an Angular artifact.
+The ESLint rule `rxjs-angular/prefer-takeuntil` enforces the usage of a `destroy$` Subject with `takeUntil` when subscribing in an Angular artifact.
 You can use the schematic `add-destroy` to automatically generate the required logic:
 
 ```
@@ -140,7 +140,7 @@ Single-use dumb components are always okay if it improves readability.
 ## Mock Facades in Tests
 
 Angular Artifacts like Components, Directives and Pipes should solely depend on facades to interact with the [State Management](../concepts/state-management.md).
-This is enforced with the TSLint rule `no-intelligence-in-artifacts` which rejects every usage of REST API Services and NgRx Artifacts.
+This is enforced with the ESLint rule `no-intelligence-in-artifacts` which rejects every usage of REST API Services and NgRx Artifacts.
 
 Use [ts-mockito](https://github.com/NagRock/ts-mockito) for creating and managing these mocks.
 Providers for Facades can easily be added by using the VSCode snippet `ish-provider-ts-mockito`:

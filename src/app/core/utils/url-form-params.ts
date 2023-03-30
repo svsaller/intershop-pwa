@@ -8,7 +8,7 @@ export function formParamsToString(object: URLFormParams, separator = ','): stri
   return object
     ? Object.entries(object)
         .filter(([, value]) => Array.isArray(value) && value.length)
-        .map(([key, val]) => `${key}=${val.join(separator)}`)
+        .map(([key, val]) => `${key}=${val.map(encodeURIComponent).join(separator)}`)
         .join('&')
     : '';
 }
@@ -21,7 +21,7 @@ export function appendFormParamsToHttpParams(
   return object
     ? Object.entries(object)
         .filter(([, value]) => Array.isArray(value) && value.length)
-        .reduce((p, [key, val]) => p.set(decodeURI(key), val.map(decodeURI).join(separator)), params)
+        .reduce((p, [key, val]) => p.set(key, val.join(separator)), params)
     : params;
 }
 
@@ -29,10 +29,10 @@ export function stringToFormParams(object: string, separator = ','): URLFormPara
   return object
     ? object
         .split('&')
-        .filter(val => val && val.includes('='))
+        .filter(val => val?.includes('='))
         .map(val => {
           const [key, values] = val.split('=');
-          return { key, value: values.split(separator) };
+          return { key: decodeURIComponent(key), value: values.split(separator).map(decodeURIComponent) };
         })
         .reduce((acc, val) => ({ ...acc, [val.key]: val.value }), {})
     : {};

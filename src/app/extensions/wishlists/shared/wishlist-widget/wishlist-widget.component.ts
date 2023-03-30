@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { SwiperOptions } from 'swiper';
-import SwiperCore, { Navigation, Pagination } from 'swiper/core';
+import SwiperCore, { Navigation, Pagination, SwiperOptions } from 'swiper';
 
 import { LARGE_BREAKPOINT_WIDTH, MEDIUM_BREAKPOINT_WIDTH } from 'ish-core/configurations/injection-keys';
 import { ProductContextDisplayProperties } from 'ish-core/facades/product-context.facade';
@@ -45,10 +44,10 @@ export class WishlistWidgetComponent implements OnInit {
 
     this.swiperConfig = {
       direction: 'horizontal',
-      keyboard: true,
-      mousewheel: false,
       navigation: true,
-      scrollbar: false,
+      pagination: {
+        clickable: true,
+      },
       breakpoints: {
         0: {
           slidesPerView: 2,
@@ -62,11 +61,6 @@ export class WishlistWidgetComponent implements OnInit {
           slidesPerView: 4,
           slidesPerGroup: 4,
         },
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-        clickableClass: 'swiper-pagination-clickable',
       },
     };
   }

@@ -24,9 +24,13 @@ import { RoleToggleModule } from 'ish-core/role-toggle.module';
 import { ModuleLoaderService } from 'ish-core/utils/module-loader/module-loader.service';
 
 import { CaptchaExportsModule } from '../extensions/captcha/exports/captcha-exports.module';
+import { CompareExportsModule } from '../extensions/compare/exports/compare-exports.module';
 import { OrderTemplatesExportsModule } from '../extensions/order-templates/exports/order-templates-exports.module';
 import { PunchoutExportsModule } from '../extensions/punchout/exports/punchout-exports.module';
+import { QuickorderExportsModule } from '../extensions/quickorder/exports/quickorder-exports.module';
 import { QuotingExportsModule } from '../extensions/quoting/exports/quoting-exports.module';
+import { RecentlyExportsModule } from '../extensions/recently/exports/recently-exports.module';
+import { StoreLocatorExportsModule } from '../extensions/store-locator/exports/store-locator-exports.module';
 import { TactonExportsModule } from '../extensions/tacton/exports/tacton-exports.module';
 import { WishlistsExportsModule } from '../extensions/wishlists/exports/wishlists-exports.module';
 
@@ -54,12 +58,15 @@ import { AddressComponent } from './components/address/address/address.component
 import { BasketAddressSummaryComponent } from './components/basket/basket-address-summary/basket-address-summary.component';
 import { BasketApprovalInfoComponent } from './components/basket/basket-approval-info/basket-approval-info.component';
 import { BasketBuyerComponent } from './components/basket/basket-buyer/basket-buyer.component';
+import { BasketCostCenterSelectionComponent } from './components/basket/basket-cost-center-selection/basket-cost-center-selection.component';
 import { BasketCostSummaryComponent } from './components/basket/basket-cost-summary/basket-cost-summary.component';
+import { BasketDesiredDeliveryDateComponent } from './components/basket/basket-desired-delivery-date/basket-desired-delivery-date.component';
 import { BasketInfoComponent } from './components/basket/basket-info/basket-info.component';
 import { BasketItemsSummaryComponent } from './components/basket/basket-items-summary/basket-items-summary.component';
 import { BasketOrderReferenceComponent } from './components/basket/basket-order-reference/basket-order-reference.component';
 import { BasketPromotionCodeComponent } from './components/basket/basket-promotion-code/basket-promotion-code.component';
 import { BasketPromotionComponent } from './components/basket/basket-promotion/basket-promotion.component';
+import { BasketShippingMethodComponent } from './components/basket/basket-shipping-method/basket-shipping-method.component';
 import { BasketValidationItemsComponent } from './components/basket/basket-validation-items/basket-validation-items.component';
 import { BasketValidationProductsComponent } from './components/basket/basket-validation-products/basket-validation-products.component';
 import { BasketValidationResultsComponent } from './components/basket/basket-validation-results/basket-validation-results.component';
@@ -72,6 +79,7 @@ import { BreadcrumbComponent } from './components/common/breadcrumb/breadcrumb.c
 import { ErrorMessageComponent } from './components/common/error-message/error-message.component';
 import { InPlaceEditComponent } from './components/common/in-place-edit/in-place-edit.component';
 import { InfoBoxComponent } from './components/common/info-box/info-box.component';
+import { InfoMessageComponent } from './components/common/info-message/info-message.component';
 import { LoadingComponent } from './components/common/loading/loading.component';
 import { ModalDialogLinkComponent } from './components/common/modal-dialog-link/modal-dialog-link.component';
 import { ModalDialogComponent } from './components/common/modal-dialog/modal-dialog.component';
@@ -96,7 +104,7 @@ import { LoginModalComponent } from './components/login/login-modal/login-modal.
 import { OrderListComponent } from './components/order/order-list/order-list.component';
 import { OrderWidgetComponent } from './components/order/order-widget/order-widget.component';
 import { ProductAddToBasketComponent } from './components/product/product-add-to-basket/product-add-to-basket.component';
-import { ProductAddToCompareComponent } from './components/product/product-add-to-compare/product-add-to-compare.component';
+import { ProductAttachmentsComponent } from './components/product/product-attachments/product-attachments.component';
 import { ProductAttributesComponent } from './components/product/product-attributes/product-attributes.component';
 import { ProductBundleDisplayComponent } from './components/product/product-bundle-display/product-bundle-display.component';
 import { ProductChooseVariationComponent } from './components/product/product-choose-variation/product-choose-variation.component';
@@ -125,7 +133,6 @@ import { ProductVariationSelectComponent } from './components/product/product-va
 import { ProductsListComponent } from './components/product/products-list/products-list.component';
 import { PromotionDetailsComponent } from './components/promotion/promotion-details/promotion-details.component';
 import { PromotionRemoveComponent } from './components/promotion/promotion-remove/promotion-remove.component';
-import { RecentlyViewedComponent } from './components/recently/recently-viewed/recently-viewed.component';
 import { ConfirmLeaveModalComponent } from './components/registration/confirm-leave-modal/confirm-leave-modal.component';
 import { SearchBoxComponent } from './components/search/search-box/search-box.component';
 import { FormlyAddressFormsModule } from './formly-address-forms/formly-address-forms.module';
@@ -138,6 +145,7 @@ const importExportModules = [
   CaptchaExportsModule,
   CdkTableModule,
   CommonModule,
+  CompareExportsModule,
   DeferLoadModule,
   DirectivesModule,
   FeatureToggleModule,
@@ -154,10 +162,13 @@ const importExportModules = [
   OrderTemplatesExportsModule,
   PipesModule,
   PunchoutExportsModule,
+  QuickorderExportsModule,
   QuotingExportsModule,
   ReactiveFormsModule,
+  RecentlyExportsModule,
   RoleToggleModule,
   RouterModule,
+  StoreLocatorExportsModule,
   SwiperModule,
   TactonExportsModule,
   TranslateModule,
@@ -215,7 +226,9 @@ const exportedComponents = [
   BasketAddressSummaryComponent,
   BasketApprovalInfoComponent,
   BasketBuyerComponent,
+  BasketCostCenterSelectionComponent,
   BasketCostSummaryComponent,
+  BasketDesiredDeliveryDateComponent,
   BasketInfoComponent,
   BasketInvoiceAddressWidgetComponent,
   BasketItemsSummaryComponent,
@@ -223,6 +236,7 @@ const exportedComponents = [
   BasketPromotionCodeComponent,
   BasketPromotionComponent,
   BasketShippingAddressWidgetComponent,
+  BasketShippingMethodComponent,
   BasketValidationResultsComponent,
   BreadcrumbComponent,
   ConfirmLeaveModalComponent,
@@ -235,6 +249,7 @@ const exportedComponents = [
   IdentityProviderLoginComponent,
   InPlaceEditComponent,
   InfoBoxComponent,
+  InfoMessageComponent,
   LineItemListComponent,
   LoadingComponent,
   LoginFormComponent,
@@ -244,7 +259,7 @@ const exportedComponents = [
   OrderListComponent,
   OrderWidgetComponent,
   ProductAddToBasketComponent,
-  ProductAddToCompareComponent,
+  ProductAttachmentsComponent,
   ProductAttributesComponent,
   ProductBundleDisplayComponent,
   ProductIdComponent,
@@ -265,7 +280,6 @@ const exportedComponents = [
   ProductsListComponent,
   PromotionDetailsComponent,
   PromotionRemoveComponent,
-  RecentlyViewedComponent,
   SearchBoxComponent,
   SuccessMessageComponent,
 ];

@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { MAIN_NAVIGATION_MAX_SUB_CATEGORIES_DEPTH } from 'ish-core/configurations/injection-keys';
 import { ShoppingFacade } from 'ish-core/facades/shopping.facade';
 import { NavigationCategory } from 'ish-core/models/navigation-category/navigation-category.model';
 
@@ -16,7 +17,10 @@ export class HeaderNavigationComponent implements OnInit {
 
   private openedCategories: string[] = [];
 
-  constructor(private shoppingFacade: ShoppingFacade) {}
+  constructor(
+    private shoppingFacade: ShoppingFacade,
+    @Inject(MAIN_NAVIGATION_MAX_SUB_CATEGORIES_DEPTH) public mainNavigationMaxSubCategoriesDepth: number
+  ) {}
 
   ngOnInit() {
     this.categories$ = this.shoppingFacade.navigationCategories$();
@@ -25,6 +29,7 @@ export class HeaderNavigationComponent implements OnInit {
   /**
    * Handle sub menu show.
    * Adds hover class to rendered element.
+   *
    * @param subMenu The rendered sub menu element.
    */
   subMenuShow(subMenu: HTMLElement) {
@@ -34,6 +39,7 @@ export class HeaderNavigationComponent implements OnInit {
   /**
    * Handle sub menu hide.
    * Removes hover class from rendered element.
+   *
    * @param subMenu The rendered sub menu element.
    */
   subMenuHide(subMenu: HTMLElement) {
@@ -42,6 +48,7 @@ export class HeaderNavigationComponent implements OnInit {
 
   /**
    * Indicate if specific category is expanded.
+   *
    * @param category The category item.
    */
   isOpened(uniqueId: string): boolean {
@@ -50,6 +57,7 @@ export class HeaderNavigationComponent implements OnInit {
 
   /**
    * Toggle category open state.
+   *
    * @param category The category item.
    */
   toggleOpen(uniqueId: string) {

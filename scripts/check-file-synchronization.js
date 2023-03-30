@@ -1,12 +1,16 @@
 const synchronizations = {
-  'pwa-docker-build': ['Dockerfile', 'Dockerfile_noSSR'],
+  'docker-cache-share': ['Dockerfile', 'Dockerfile_reports'],
 };
 
 const fs = require('fs');
 
-foundError = false;
+let foundError = false;
 
 Object.keys(synchronizations).forEach(key => {
+  console.log(key);
+  synchronizations[key].forEach(file => {
+    console.log(' ', file);
+  });
   const table = synchronizations[key]
     .map(file => process.cwd() + '/' + file)
     .map(path =>

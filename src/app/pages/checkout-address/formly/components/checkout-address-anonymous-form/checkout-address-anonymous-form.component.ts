@@ -23,11 +23,10 @@ export class CheckoutAddressAnonymousFormComponent implements OnInit, OnDestroy 
   addressOptions: FormlyFormOptions = {};
 
   shipOptionFields: FormlyFieldConfig[];
-  shipOptionOptions: FormlyFormOptions = {};
 
   isBusinessCustomer = false;
 
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
 
   get isShippingAddressFormExpanded() {
     return this.form && this.form.get('shipOption').value === 'shipToDifferentAddress';
@@ -52,12 +51,6 @@ export class CheckoutAddressAnonymousFormComponent implements OnInit, OnDestroy 
               },
               postWrappers: [{ wrapper: 'description', index: -1 }],
             },
-            validation: {
-              messages: {
-                required: 'account.email.error.email',
-                email: 'checkout.addresses.email.invalid.error',
-              },
-            },
           },
         ],
       },
@@ -75,7 +68,6 @@ export class CheckoutAddressAnonymousFormComponent implements OnInit, OnDestroy 
         defaultValue: 'shipToInvoiceAddress',
         templateOptions: {
           label: 'checkout.addresses.shipping_address.option1.text',
-          id: 'shipOption1',
           value: 'shipToInvoiceAddress',
         },
       },
@@ -85,7 +77,6 @@ export class CheckoutAddressAnonymousFormComponent implements OnInit, OnDestroy 
         defaultValue: 'shipToInvoiceAddress',
         templateOptions: {
           label: 'checkout.addresses.shipping_address.option2.text',
-          id: 'shipOption2',
           value: 'shipToDifferentAddress',
         },
       },
@@ -109,11 +100,7 @@ export class CheckoutAddressAnonymousFormComponent implements OnInit, OnDestroy 
       type: 'ish-fieldset-field',
       fieldGroup: [
         {
-          key: 'taxationID',
-          type: 'ish-text-input-field',
-          templateOptions: {
-            label: 'account.address.taxation.label',
-          },
+          type: '#taxationID',
         },
       ],
     };

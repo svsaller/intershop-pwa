@@ -3,13 +3,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { NgbPopover } from '@ng-bootstrap/ng-bootstrap';
 import { TranslateModule } from '@ngx-translate/core';
-import b64u from 'b64u';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { anything, spy, verify } from 'ts-mockito';
 
 import { PaymentMethod } from 'ish-core/models/payment-method/payment-method.model';
 import { FormControlFeedbackComponent } from 'ish-shared/forms/components/form-control-feedback/form-control-feedback.component';
 import { ShowFormFeedbackDirective } from 'ish-shared/forms/directives/show-form-feedback.directive';
+
+import { PaymentSaveCheckboxComponent } from '../formly/payment-save-checkbox/payment-save-checkbox.component';
 
 import { PaymentCybersourceCreditcardComponent } from './payment-cybersource-creditcard.component';
 
@@ -23,7 +24,8 @@ describe('Payment Cybersource Creditcard Component', () => {
       declarations: [
         MockComponent(FaIconComponent),
         MockComponent(FormControlFeedbackComponent),
-        MockComponent(NgbPopover),
+        MockComponent(PaymentSaveCheckboxComponent),
+        MockDirective(NgbPopover),
         MockDirective(ShowFormFeedbackDirective),
         PaymentCybersourceCreditcardComponent,
       ],
@@ -51,7 +53,7 @@ describe('Payment Cybersource Creditcard Component', () => {
   it('should emit cancel event when cancelNewPaymentInstrument is triggered', () => {
     fixture.detectChanges();
 
-    const emitter = spy(component.cancel);
+    const emitter = spy(component.cancelPayment);
 
     component.cancelNewPaymentInstrument();
     verify(emitter.emit()).once();
@@ -59,7 +61,7 @@ describe('Payment Cybersource Creditcard Component', () => {
 
   it('should emit submit event if submit call back returns with no error and parameter form is valid', () => {
     fixture.detectChanges();
-    const emitter = spy(component.submit);
+    const emitter = spy(component.submitPayment);
 
     const payloadjson = {
       data: { number: '4111 1111 1111 1111', type: '001', expirationMonth: '11', expirationYear: '2022' },
@@ -68,7 +70,7 @@ describe('Payment Cybersource Creditcard Component', () => {
       iat: 'test',
       jti: 'test',
     };
-    const payload = b64u.encode(JSON.stringify(payloadjson));
+    const payload = window.btoa(JSON.stringify(payloadjson));
 
     component.cyberSourceCreditCardForm.controls.expirationMonth.setValue('11');
     component.cyberSourceCreditCardForm.controls.expirationYear.setValue('2022');
@@ -81,7 +83,7 @@ describe('Payment Cybersource Creditcard Component', () => {
 
   it('should not emit submit event if submit call back returns with no error and parameter form is invalid', () => {
     fixture.detectChanges();
-    const emitter = spy(component.submit);
+    const emitter = spy(component.submitPayment);
 
     const payloadjson = {
       data: { number: '4111 1111 1111 1111', type: '001', expirationMonth: '11', expirationYear: '2022' },
@@ -90,7 +92,7 @@ describe('Payment Cybersource Creditcard Component', () => {
       iat: 'test',
       jti: 'test',
     };
-    const payload = b64u.encode(JSON.stringify(payloadjson));
+    const payload = window.btoa(JSON.stringify(payloadjson));
 
     component.expirationMonthVal = '11';
     component.expirationYearVal = '2022';

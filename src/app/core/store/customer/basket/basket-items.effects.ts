@@ -10,10 +10,9 @@ import {
   filter,
   last,
   map,
-  mapTo,
   mergeMap,
-  reduce,
   switchMap,
+  toArray,
   window,
   withLatestFrom,
 } from 'rxjs/operators';
@@ -53,30 +52,19 @@ export class BasketItemsEffects {
 
   /**
    * Add a product to the current basket.
-   * Triggers the internal AddItemsToBasket action that handles the actual adding of the product to the basket.
+   * Triggers the internal action that handles the actual adding of the product to the basket.
    */
   addProductToBasket$ = createEffect(() =>
     this.actions$.pipe(
       ofType(addProductToBasket),
       mapToPayload(),
+      // add unit
+      withLatestFrom(this.store.pipe(select(getProductEntities))),
+      map(([val, entities]) => ({ ...val, unit: entities[val.sku]?.packingUnit })),
       // accumulate all actions
       window(this.actions$.pipe(ofType(addProductToBasket), debounceTime(1000))),
-      mergeMap(window$ =>
-        window$.pipe(
-          withLatestFrom(this.store.pipe(select(getProductEntities))),
-          // accumulate changes
-          reduce((acc, [val, entities]) => {
-            const element = acc.find(x => x.sku === val.sku);
-            if (element) {
-              element.quantity += val.quantity;
-            } else {
-              acc.push({ ...val, unit: entities[val.sku] && entities[val.sku].packingUnit });
-            }
-            return acc;
-          }, []),
-          map(items => addItemsToBasket({ items }))
-        )
-      )
+      mergeMap(window$ => window$.pipe(toArray())),
+      map(items => addItemsToBasket({ items }))
     )
   );
 
@@ -85,17 +73,17 @@ export class BasketItemsEffects {
       ofType(addItemsToBasket),
       mapToPayload(),
       withLatestFrom(this.store.pipe(select(getCurrentBasketId))),
-      concatMap(([payload, basketId]) => {
+      concatMap(([{ items }, basketId]) => {
         if (basketId) {
-          return this.basketService.addItemsToBasket(payload.items).pipe(
-            map(info => addItemsToBasketSuccess({ info })),
+          return this.basketService.addItemsToBasket(items).pipe(
+            map(info => addItemsToBasketSuccess({ info, items })),
             mapErrorToAction(addItemsToBasketFail)
           );
         } else {
           return this.basketService.createBasket().pipe(
             switchMap(() =>
-              this.basketService.addItemsToBasket(payload.items).pipe(
-                map(info => addItemsToBasketSuccess({ info })),
+              this.basketService.addItemsToBasket(items).pipe(
+                map(info => addItemsToBasketSuccess({ info, items })),
                 mapErrorToAction(addItemsToBasketFail)
               )
             )
@@ -142,7 +130,7 @@ export class BasketItemsEffects {
             }
           })
         ).pipe(
-          defaultIfEmpty(),
+          defaultIfEmpty(undefined),
           last(),
           map(info => updateBasketItemsSuccess({ info })),
           mapErrorToAction(updateBasketItemsFail)
@@ -159,7 +147,7 @@ export class BasketItemsEffects {
       ofType(updateBasketItemsFail),
       mapToPayload(),
       withLatestFrom(this.store.pipe(select(getCurrentBasket))),
-      mapTo(validateBasket({ scopes: ['Products'] }))
+      map(() => validateBasket({ scopes: ['Products'] }))
     )
   );
 
@@ -185,7 +173,7 @@ export class BasketItemsEffects {
   loadBasketAfterBasketItemsChangeSuccess$ = createEffect(() =>
     this.actions$.pipe(
       ofType(addItemsToBasketSuccess, updateBasketItemsSuccess, deleteBasketItemSuccess),
-      mapTo(loadBasket())
+      map(() => loadBasket())
     )
   );
 

@@ -8,43 +8,45 @@ import { TactonConfig } from '../app/extensions/tacton/models/tacton-config/tact
 
 export interface Environment {
   /* INTERSHOP COMMERCE MANAGEMENT REST API CONFIGURATION */
-
   icmBaseURL: string;
   icmServer: string;
   icmServerStatic: string;
-
-  // temporarily hard-coded identity provider ID, later supplied by configurations call
-  identityProvider: 'ICM' | string;
-
-  // application specific
   icmChannel: string;
   icmApplication?: string;
 
   // array of REST path expressions that should always be mocked
   apiMockPaths?: string[];
 
+  // temporarily hard-coded identity provider ID, later supplied by configurations call
+  identityProvider: 'ICM' | string;
+
   /* FEATURE TOGGLES */
   features: (
     | 'compare'
     | 'rating'
     | 'recently'
+    | 'storeLocator'
     /* B2B features */
-    | 'advancedVariationHandling'
     | 'businessCustomerRegistration'
+    | 'costCenters'
     | 'quoting'
     | 'quickorder'
     | 'orderTemplates'
     | 'punchout'
+    /* B2C features */
+    | 'guestCheckout'
+    | 'wishlists'
     /* Third-party Integrations */
     | 'sentry'
     | 'tracking'
     | 'tacton'
-    /* B2C features */
-    | 'guestCheckout'
-    | 'wishlists'
+    | 'maps'
   )[];
 
   /* ADDITIONAL FEATURE CONFIGURATIONS */
+
+  // Google Maps API Key
+  gmaKey?: string;
 
   // track shop interaction via Google Tag Manager (to be used with 'tracking' feature, works with server side rendering only)
   gtmToken?: string;
@@ -81,6 +83,7 @@ export interface Environment {
   // default device type used for initial page responses
   defaultDeviceType: DeviceType;
 
+  // default locale that is used as fallback if no default locale from the ICM REST call is available
   defaultLocale?: string;
 
   // configuration filtering available locales and their active currencies
@@ -89,9 +92,9 @@ export interface Environment {
   // multi-site URLs to locales mapping ('undefined' if mapping should not be used)
   multiSiteLocaleMap: MultiSiteLocaleMap;
 
-  // configuration of the styling theme ('default' if not configured)
-  // format: 'themeName|themeColor' e.g. theme: 'blue|688dc3',
-  theme?: string;
+  // configuration of the styling theme color used for theme-color meta
+  // format: hex color e.g. themeColor: '#688dc3',
+  themeColor?: string;
 
   // cookie consent options
   cookieConsentOptions?: CookieConsentOptions;
@@ -107,19 +110,19 @@ export interface Environment {
       | Auth0Config;
   };
 
+  // enable and configure data persistence for specific stores (compare, recently, tacton)
   dataRetention: DataRetentionPolicy;
 }
 
-export const ENVIRONMENT_DEFAULTS: Environment = {
+export const ENVIRONMENT_DEFAULTS: Omit<Environment, 'icmChannel'> = {
   /* INTERSHOP COMMERCE MANAGEMENT REST API CONFIGURATION */
-  icmBaseURL: 'NOT SET',
-  icmChannel: 'inSPIRED-inTRONICS-Site',
+  icmBaseURL: 'https://pwa-ish-demo.test.intershop.com',
   icmServer: 'INTERSHOP/rest/WFS',
   icmServerStatic: 'INTERSHOP/static/WFS',
   icmApplication: 'rest',
   identityProvider: 'ICM',
 
-  /* FEATURE TOOGLES */
+  /* FEATURE TOGGLES */
   features: ['compare', 'guestCheckout', 'recently', 'rating', 'wishlists'],
 
   /* PROGRESSIVE WEB APP CONFIGURATIONS */

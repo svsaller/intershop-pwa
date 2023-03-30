@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Store, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
+import { map, startWith, withLatestFrom } from 'rxjs/operators';
 
 import { HttpError } from 'ish-core/models/http-error/http-error.model';
+import { SelectOption } from 'ish-core/models/select-option/select-option.model';
 
 import { OrderTemplate, OrderTemplateHeader } from '../models/order-template/order-template.model';
 import {
@@ -15,6 +17,7 @@ import {
   getOrderTemplateError,
   getOrderTemplateLoading,
   getSelectedOrderTemplateDetails,
+  getSelectedOrderTemplateOutOfStockItems,
   moveItemToOrderTemplate,
   removeItemFromOrderTemplate,
   updateOrderTemplate,
@@ -26,8 +29,30 @@ export class OrderTemplatesFacade {
 
   orderTemplates$: Observable<OrderTemplate[]> = this.store.pipe(select(getAllOrderTemplates));
   currentOrderTemplate$: Observable<OrderTemplate> = this.store.pipe(select(getSelectedOrderTemplateDetails));
+  currentOrderTemplateOutOfStockItems$: Observable<string[]> = this.store.pipe(
+    select(getSelectedOrderTemplateOutOfStockItems)
+  );
   orderTemplateLoading$: Observable<boolean> = this.store.pipe(select(getOrderTemplateLoading));
   orderTemplateError$: Observable<HttpError> = this.store.pipe(select(getOrderTemplateError));
+
+  orderTemplatesSelectOptions$(filterCurrent = true): Observable<SelectOption[]> {
+    return this.orderTemplates$.pipe(
+      startWith([] as OrderTemplate[]),
+      map(orderTemplates =>
+        orderTemplates.map(orderTemplate => ({
+          value: orderTemplate.id,
+          label: orderTemplate.title,
+        }))
+      ),
+      withLatestFrom(this.currentOrderTemplate$),
+      map(([orderTemplateOptions, currentOrderTemplate]) => {
+        if (filterCurrent && currentOrderTemplate) {
+          return orderTemplateOptions.filter(option => option.value !== currentOrderTemplate.id);
+        }
+        return orderTemplateOptions;
+      })
+    );
+  }
 
   addOrderTemplate(orderTemplate: OrderTemplateHeader): void | HttpError {
     this.store.dispatch(createOrderTemplate({ orderTemplate }));

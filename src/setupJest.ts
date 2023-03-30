@@ -1,10 +1,11 @@
-// tslint:disable:ish-ordered-imports
 require('jest-preset-angular/setup-jest');
-
-require('jest-extended');
 
 import { CompilerOptions } from '@angular/core';
 import { getTestBed } from '@angular/core/testing';
+import '@angular/localize/init';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+expect.extend(require('jest-extended'));
 
 beforeEach(() => {
   const compilerOptions: CompilerOptions = { preserveWhitespaces: false };
@@ -22,12 +23,8 @@ beforeEach(() => {
     logFunction(...args);
   };
 
-  const errorFunction = global.console.error;
   global.console.error = (...args: unknown[]) => {
-    if (args?.some(arg => arg instanceof Error)) {
-      fail(...args);
-    }
-    errorFunction(...args);
+    fail(...args);
   };
 
   jest.spyOn(global.console, 'warn').mockImplementation(arg => {
@@ -38,7 +35,7 @@ beforeEach(() => {
         arg.startsWith('A router outlet has not been instantiated during routes activation. URL Segment:')
       )
     ) {
-      // tslint:disable-next-line:no-console
+      // eslint-disable-next-line no-console
       console.log(arg);
     }
   });
@@ -47,11 +44,15 @@ beforeEach(() => {
 afterEach(() => jest.clearAllTimers());
 
 Object.defineProperty(global, 'PRODUCTION_MODE', {
-  value: () => false,
+  get: () => false,
 });
 
 Object.defineProperty(global, 'NGRX_RUNTIME_CHECKS', {
-  value: () => true,
+  get: () => true,
+});
+
+Object.defineProperty(global, 'THEME', {
+  get: () => 'default',
 });
 
 Object.defineProperty(document.body.style, 'transform', {

@@ -38,7 +38,7 @@ describe('Configuration Selectors', () => {
       expect(getICMServerURL(store$.state)).toBeUndefined();
       expect(getICMStaticURL(store$.state)).toBeUndefined();
       expect(getFeatures(store$.state)).toBeUndefined();
-      expect(getDeviceType(store$.state)).not.toBeEmpty();
+      expect(getDeviceType(store$.state)).toBeUndefined();
       expect(getIdentityProvider(store$.state)).toBeUndefined();
     });
   });
@@ -110,20 +110,16 @@ describe('Configuration Selectors', () => {
 
   describe('after initialization', () => {
     describe('without ICM server configuration', () => {
-      it('should choose the internal default locale and currency when no ICM is available', () => {
+      it('should not provide any locale or currency when no ICM is available', () => {
         store$.dispatch(
           applyConfiguration({
             defaultLocale: 'en_US',
             localeCurrencyOverride: undefined,
           })
         );
-        expect(getCurrentLocale(store$.state)).toMatchInlineSnapshot(`"en_US"`);
+        expect(getCurrentLocale(store$.state)).toBeUndefined();
         expect(getCurrentCurrency(store$.state)).toBeUndefined();
-        expect(getAvailableLocales(store$.state)).toMatchInlineSnapshot(`
-          Array [
-            "en_US",
-          ]
-        `);
+        expect(getAvailableLocales(store$.state)).toBeUndefined();
         expect(getAvailableCurrencies(store$.state)).toBeUndefined();
       });
 
@@ -170,6 +166,7 @@ describe('Configuration Selectors', () => {
       it('should return ICM server currencies for available currencies', () => {
         expect(getAvailableCurrencies(store$.state)).toMatchInlineSnapshot(`
           Array [
+            "USD",
             "EUR",
           ]
         `);

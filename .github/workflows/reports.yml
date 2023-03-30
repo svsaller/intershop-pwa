@@ -26,9 +26,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Reset .dockerignore
+        run: echo node_modules > .dockerignore
+
       - name: Publish Reports Image to Registry
         id: reports
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: reports
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}

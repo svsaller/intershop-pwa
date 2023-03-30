@@ -5,12 +5,7 @@ import { Translations } from 'ish-core/utils/translate/translations.type';
 
 import { environment } from '../../../../../environments/environment';
 
-import {
-  applyConfiguration,
-  loadServerTranslationsFail,
-  loadServerTranslationsSuccess,
-  loadSingleServerTranslationSuccess,
-} from './configuration.actions';
+import { applyConfiguration, loadSingleServerTranslationSuccess } from './configuration.actions';
 
 export interface ConfigurationState {
   baseURL?: string;
@@ -21,7 +16,6 @@ export interface ConfigurationState {
   identityProvider?: string;
   identityProviders?: { [id: string]: { type?: string; [key: string]: unknown } };
   features?: string[];
-  theme?: string;
   defaultLocale?: string;
   localeCurrencyOverride?: { [locale: string]: string | string[] };
   lang?: string;
@@ -39,7 +33,6 @@ const initialState: ConfigurationState = {
   channel: undefined,
   application: undefined,
   features: undefined,
-  theme: undefined,
   defaultLocale: environment.defaultLocale,
   localeCurrencyOverride: environment.localeCurrencyOverride,
   lang: undefined,
@@ -48,13 +41,6 @@ const initialState: ConfigurationState = {
   multiSiteLocaleMap: {},
   _deviceType: environment.defaultDeviceType,
 };
-
-function setTranslations(state: ConfigurationState, lang: string, translations: Translations): ConfigurationState {
-  return {
-    ...state,
-    serverTranslations: { ...state.serverTranslations, [lang]: translations },
-  };
-}
 
 function addSingleTranslation(
   state: ConfigurationState,
@@ -74,10 +60,6 @@ function addSingleTranslation(
 export const configurationReducer = createReducer(
   initialState,
   on(applyConfiguration, (state, action) => ({ ...state, ...action.payload })),
-  on(loadServerTranslationsSuccess, (state, action) =>
-    setTranslations(state, action.payload.lang, action.payload.translations)
-  ),
-  on(loadServerTranslationsFail, (state, action) => setTranslations(state, action.payload.lang, {})),
   on(loadSingleServerTranslationSuccess, (state, action) =>
     addSingleTranslation(state, action.payload.lang, action.payload.key, action.payload.translation)
   )

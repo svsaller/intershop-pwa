@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { MockPipe } from 'ng-mocks';
 
@@ -17,7 +16,7 @@ describe('Requisition Summary Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, TranslateModule.forRoot()],
+      imports: [TranslateModule.forRoot()],
       declarations: [MockPipe(DatePipe), MockPipe(PricePipe), RequisitionSummaryComponent],
     }).compileComponents();
   });
@@ -33,10 +32,12 @@ describe('Requisition Summary Component', () => {
       approval: {
         status: 'Approval Pending',
         statusCode: 'PENDING',
-        customerApprovers: [
-          { firstName: 'Jack', lastName: 'Link' },
-          { firstName: 'Bernhhard', lastName: 'Boldner' },
-        ],
+        customerApproval: {
+          approvers: [
+            { firstName: 'Jack', lastName: 'Link' },
+            { firstName: 'Bernhhard', lastName: 'Boldner' },
+          ],
+        },
       },
       user: { firstName: 'Patricia', lastName: 'Miller' },
       totals: undefined,
@@ -64,20 +65,14 @@ describe('Requisition Summary Component', () => {
       NodeList [
         <dd class="col-6 col-sm-8 col-md-9">4712</dd>,
         <dd class="col-6 col-sm-8 col-md-9"></dd>,
-        <dd class="col-6 col-sm-8 col-md-9">Jack Link , Bernhhard Boldner</dd>,
+        <dd class="col-6 col-sm-8 col-md-9">Jack Link, Bernhhard Boldner</dd>,
         <dd class="col-6 col-sm-8 col-md-9"></dd>,
         <dd class="col-6 col-sm-8 col-md-9">
         <span
-          class="
-            border border-secondary
-            badge badge-secondary
-            text-capitalize
-            border-warning
-            badge-warning
-          "
+          class="border border-secondary badge badge-secondary text-capitalize border-warning badge-warning"
         >
-          Approval Pending</span
-        >
+          Approval Pending
+        </span>
       </dd>,
       ]
     `);
@@ -95,16 +90,10 @@ describe('Requisition Summary Component', () => {
         <dd class="col-6 col-sm-8 col-md-9"></dd>,
         <dd class="col-6 col-sm-8 col-md-9">
         <span
-          class="
-            border border-secondary
-            badge badge-secondary
-            text-capitalize
-            border-warning
-            badge-warning
-          "
+          class="border border-secondary badge badge-secondary text-capitalize border-warning badge-warning"
         >
-          Approval Pending</span
-        >
+          Approval Pending
+        </span>
       </dd>,
       ]
     `);

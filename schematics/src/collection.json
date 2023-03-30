@@ -7,6 +7,12 @@
       "description": "Create an address form configuration",
       "schema": "./address-form-configuration/schema.json"
     },
+    "field-library-configuration": {
+      "aliases": ["flc"],
+      "factory": "./field-library-configuration/factory#createFieldLibraryConfiguration",
+      "description": "Create a field library configuration item",
+      "schema": "./field-library-configuration/schema.json"
+    },
     "cms-component": {
       "aliases": ["cms"],
       "factory": "./cms-component/factory#createCMSComponent",
@@ -107,6 +113,17 @@
       "factory": "./helpers/add-destroy/factory#add",
       "description": "Add destroy subject to an existing Angular artifact.",
       "schema": "./helpers/add-destroy/schema.json"
+    },
+    "override": {
+      "factory": "./helpers/override/factory#override",
+      "description": "Override a source for customization.",
+      "schema": "./helpers/override/schema.json"
+    },
+    "eslint-rule": {
+      "aliases": ["er"],
+      "description": "A blank schematic.",
+      "factory": "./eslint-rule/factory#eslintRule",
+      "schema": "./eslint-rule/schema.json"
     }
   }
 }

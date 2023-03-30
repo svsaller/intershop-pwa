@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { ErrorHandler, Injectable } from '@angular/core';
 import { Store, select } from '@ngrx/store';
 import { Observable, of } from 'rxjs';
 import { catchError, concatMap, map, take } from 'rxjs/operators';
@@ -8,29 +8,22 @@ import { getRestEndpoint } from 'ish-core/store/core/configuration';
 import { whenTruthy } from 'ish-core/utils/operators';
 import { Translations } from 'ish-core/utils/translate/translations.type';
 
-function maybeJSON(val: string) {
-  if (val.startsWith('{')) {
-    try {
-      return JSON.parse(val);
-    } catch {
-      // default
+function filterAndTransformKeys(translations: Record<string, string>): Translations {
+  // this implementation is mutable by intention, as it can lead to performance issues when using Object.entries and reduce
+  const filtered: Record<string, string> = {};
+  for (const key in translations) {
+    if (key.startsWith('pwa-')) {
+      filtered[key.substring(4)] = translations[key];
     }
   }
-  return val;
-}
-
-function filterAndTransformKeys(translations: Record<string, string>): Translations {
-  return Object.entries(translations)
-    .filter(([key]) => key.startsWith('pwa-'))
-    .map(([key, value]) => [key.substring(4), maybeJSON(value)])
-    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+  return filtered;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LocalizationsService {
   private icmEndpoint$: Observable<string>;
 
-  constructor(private httpClient: HttpClient, store: Store) {
+  constructor(private httpClient: HttpClient, private errorHandler: ErrorHandler, store: Store) {
     this.icmEndpoint$ = store.pipe(select(getRestEndpoint), whenTruthy(), take(1));
   }
 
@@ -43,7 +36,13 @@ export class LocalizationsService {
               searchKeys: 'pwa-',
             },
           })
-          .pipe(map(filterAndTransformKeys))
+          .pipe(
+            map(filterAndTransformKeys),
+            catchError(err => {
+              this.errorHandler.handleError(err);
+              return of({});
+            })
+          )
       )
     );
   }

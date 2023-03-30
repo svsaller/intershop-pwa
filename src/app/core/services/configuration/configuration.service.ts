@@ -18,13 +18,15 @@ export class ConfigurationService {
 
   /**
    * Gets the ICM configuration parameters.
+   *
    * @returns           The configuration object.
    */
   getServerConfiguration(): Observable<ServerConfig> {
     return this.apiService
       .get(`configurations`, {
         headers: this.configHeaders,
-        runExclusively: true,
+        sendLocale: false,
+        sendCurrency: false,
       })
       .pipe(map(ServerConfigMapper.fromData));
   }

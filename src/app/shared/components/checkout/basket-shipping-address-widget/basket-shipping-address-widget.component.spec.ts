@@ -15,7 +15,6 @@ import { AddressComponent } from 'ish-shared/components/address/address/address.
 import { ModalDialogComponent } from 'ish-shared/components/common/modal-dialog/modal-dialog.component';
 import { FormlyCustomerAddressFormComponent } from 'ish-shared/formly-address-forms/components/formly-customer-address-form/formly-customer-address-form.component';
 import { FormlyTestingModule } from 'ish-shared/formly/dev/testing/formly-testing.module';
-import { FormsService } from 'ish-shared/forms/utils/forms.service';
 
 import { BasketShippingAddressWidgetComponent } from './basket-shipping-address-widget.component';
 
@@ -25,17 +24,15 @@ describe('Basket Shipping Address Widget Component', () => {
   let element: HTMLElement;
   let checkoutFacade: CheckoutFacade;
   let accountFacade: AccountFacade;
-  let formsService: FormsService;
 
   beforeEach(async () => {
     checkoutFacade = mock(CheckoutFacade);
     when(checkoutFacade.basket$).thenReturn(EMPTY);
     when(checkoutFacade.basketShippingAddress$).thenReturn(EMPTY);
+    when(checkoutFacade.basketInvoiceAndShippingAddressEqual$).thenReturn(of(false));
 
     accountFacade = mock(AccountFacade);
     when(accountFacade.addresses$()).thenReturn(EMPTY);
-
-    formsService = mock(FormsService);
 
     await TestBed.configureTestingModule({
       imports: [FormlyTestingModule, TranslateModule.forRoot()],
@@ -48,9 +45,8 @@ describe('Basket Shipping Address Widget Component', () => {
         MockDirective(NgbCollapse),
       ],
       providers: [
-        { provide: CheckoutFacade, useFactory: () => instance(checkoutFacade) },
         { provide: AccountFacade, useFactory: () => instance(accountFacade) },
-        { provide: FormsService, useFactory: () => instance(formsService) },
+        { provide: CheckoutFacade, useFactory: () => instance(checkoutFacade) },
       ],
     }).compileComponents();
   });

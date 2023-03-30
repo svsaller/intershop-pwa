@@ -1,14 +1,12 @@
 //
 // PRODUCT DETAILS
 
-@use 'sass:math';
-
 .product-page {
   padding: $space-default 0 $space-default 0;
 }
 
 .product-details {
-  padding: 0;
+  padding: 0 0 $space-default * 3 0;
 
   .label-quantity {
     padding-top: 7px;
@@ -46,7 +44,7 @@
   margin-bottom: ($space-default * 3);
 
   @media (max-width: $screen-sm-max) {
-    margin-top: math.div($space-default, 3);
+    margin-top: divide($space-default, 3);
     margin-bottom: ($space-default);
   }
 
@@ -83,13 +81,13 @@
   margin: $space-default 0;
 
   .panel-heading {
-    padding: math.div($space-default, 3) 0;
+    padding: divide($space-default, 3) 0;
 
     a {
-      color: $text-color-quarternary;
+      color: $text-color-quaternary;
 
       &:hover {
-        color: darken($text-color-quarternary, 10%);
+        color: darken($text-color-quaternary, 10%);
       }
     }
 
@@ -104,10 +102,11 @@
     padding: $space-default 0;
     color: $text-color-primary;
 
-    .product-attachments-list-item {
-      .ng-fa-icon {
-        margin-left: math.div($space-default * 2, 3);
-        font-size: 22px;
+    .product-attachment {
+      margin-bottom: $space-default;
+
+      .product-attachment-description {
+        margin-bottom: 0;
       }
     }
   }
@@ -123,23 +122,6 @@
   }
 
   .product-warranty-list {
-    margin-top: math.div($space-default, 3);
+    margin-top: divide($space-default, 3);
   }
-}
-
-// product links with tabs or as accordion
-.collection .tab-content > .tab-pane,
-.accordion .panel-collapse {
-  display: block;
-  height: 0;
-  pointer-events: none;
-  visibility: hidden;
-}
-
-.collection .tab-content > .active,
-.accordion .panel-collapse.in {
-  display: block;
-  height: auto;
-  pointer-events: auto;
-  visibility: visible;
 }

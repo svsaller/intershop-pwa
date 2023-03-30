@@ -18,9 +18,9 @@ export class CartPage {
   }
 
   createQuoteRequest() {
-    waitLoadingEnd(1000);
+    waitLoadingEnd(5000);
     this.saveQuoteRequestButton().click();
-    waitLoadingEnd(1000);
+    waitLoadingEnd(5000);
   }
 
   private addToWishlistButton = () => cy.get('ish-shopping-basket').find('[data-testing-id="addToWishlistButton"]');
@@ -37,6 +37,14 @@ export class CartPage {
     return cy.get(this.tag).find('div.pli-description');
   }
 
+  get costCenterSelection() {
+    return cy.get('select[data-testing-id="costCenter"]');
+  }
+
+  selectCostCenter(id: string) {
+    this.costCenterSelection.select(id);
+  }
+
   addProductToWishlist() {
     this.addToWishlistButton().click();
   }
@@ -47,6 +55,17 @@ export class CartPage {
 
   addBasketToOrderTemplate() {
     this.addBasketToOrderTemplateButton().click();
+  }
+
+  validateDirectOrderSku(sku: string) {
+    cy.get('[data-testing-id="direct-order-form"] input').first().clear().type(sku).wait(1000);
+    cy.get('[data-testing-id="direct-order-form"] small').first().contains(`The product ID ${sku} is not valid.`);
+  }
+
+  addProductToBasketWithDirectOrder(sku: string) {
+    cy.get('[data-testing-id="direct-order-form"] input').first().clear().type(sku).wait(1000);
+    cy.get('[data-testing-id="direct-order-form"] button').last().click();
+    waitLoadingEnd();
   }
 
   collapsePromotionForm() {
@@ -85,7 +104,7 @@ export class CartPage {
             .invoke('val')
             .then(v => +v),
       },
-      remove: () => cy.get(this.tag).find('svg[data-icon="trash-alt"]').eq(idx).click(),
+      remove: () => cy.get(this.tag).find('[data-testing-id="remove-line-item"]').eq(idx).click(),
       sku: cy.get(this.tag).find('.product-id').eq(idx),
       openVariationEditDialog: () =>
         cy.get(this.tag).find('ish-line-item-edit').eq(idx).find('a.line-item-edit-link').click(),

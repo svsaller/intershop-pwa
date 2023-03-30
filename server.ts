@@ -1,4 +1,4 @@
-// tslint:disable: no-console ish-ordered-imports force-jsdoc-comments ban-specific-imports
+/* eslint-disable no-console, ish-custom-rules/ordered-imports, no-restricted-imports, complexity, @typescript-eslint/no-var-requires */
 import 'zone.js/node';
 
 import * as express from 'express';
@@ -6,34 +6,65 @@ import { join } from 'path';
 import * as robots from 'express-robots-txt';
 import * as fs from 'fs';
 import * as proxy from 'express-http-proxy';
-// tslint:disable-next-line: ban-specific-imports
 import { AppServerModule, ICM_WEB_URL, HYBRID_MAPPING_TABLE, environment, APP_BASE_HREF } from './src/main.server';
 import { ngExpressEngine } from '@nguniversal/express-engine';
+import { getDeployURLFromEnv, setDeployUrlInFile } from './src/ssr/deploy-url';
+
+const PM2 = process.env.pm_id && process.env.name ? `${process.env.pm_id} ${process.env.name}` : undefined;
+
+if (PM2) {
+  const logOriginal = console.log;
+
+  console.log = (...args: unknown[]) => {
+    logOriginal(PM2, ...args);
+  };
+
+  const warnOriginal = console.warn;
+
+  console.warn = (...args: unknown[]) => {
+    warnOriginal(PM2, ...args);
+  };
+
+  const errorOriginal = console.error;
+
+  console.error = (...args: unknown[]) => {
+    errorOriginal(PM2, ...args);
+  };
+}
 
 const PORT = process.env.PORT || 4200;
 
+const DEPLOY_URL = getDeployURLFromEnv();
+
 const DIST_FOLDER = join(process.cwd(), 'dist');
 
+const BROWSER_FOLDER = process.env.BROWSER_FOLDER || join(process.cwd(), 'dist', 'browser');
+
 // uncomment this block to prevent ssr issues with third-party libraries regarding window, document, HTMLElement and navigator
-// tslint:disable-next-line: no-commented-out-code
+// eslint-disable-next-line etc/no-commented-out-code
 /*
 const domino = require('domino');
-const template = fs.readFileSync(join(DIST_FOLDER, 'browser', 'index.html')).toString();
+
+const template = fs.readFileSync(join(BROWSER_FOLDER, 'index.html')).toString();
+
 const win = domino.createWindow(template);
 
-// tslint:disable:no-string-literal
 global['window'] = win;
+
 global['document'] = win.document;
+
 global['HTMLElement'] = win.HTMLElement;
+
 global['navigator'] = win.navigator;
-// tslint:enable:no-string-literal
 */
 
 // The Express app is exported so that it can be used by serverless Functions.
+// not-dead-code
 export function app() {
   const logging = /on|1|true|yes/.test(process.env.LOGGING?.toLowerCase());
 
   const ICM_BASE_URL = process.env.ICM_BASE_URL || environment.icmBaseURL;
+
   if (!ICM_BASE_URL) {
     console.error('ICM_BASE_URL not set');
     process.exit(1);
@@ -45,6 +76,59 @@ export function app() {
     // and https://github.com/angular/universal/issues/856#issuecomment-436364729
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     console.warn("ignoring all TLS verification as 'TRUST_ICM' variable is set - never use this in production!");
+  } else {
+    const [icmProtocol, icmBase] = ICM_BASE_URL.split('://');
+    // check for ssl certificate should be done, if https is used
+    if (icmProtocol === 'https') {
+      const https = require('https');
+
+      const [, icmHost, icmPort] = /^(.*?):?([0-9]+)?[\/]*$/.exec(icmBase);
+
+      const options = {
+        host: icmHost,
+        port: icmPort || '443',
+        method: 'get',
+        path: '/',
+      };
+
+      const req = https.request(options, (res: { socket: { authorized: boolean } }) => {
+        console.log('Certificate for', ICM_BASE_URL, 'authorized:', res.socket.authorized);
+      });
+
+      const certErrorCodes = [
+        'CERT_SIGNATURE_FAILURE',
+        'CERT_NOT_YET_VALID',
+        'CERT_HAS_EXPIRED',
+        'ERROR_IN_CERT_NOT_BEFORE_FIELD',
+        'ERROR_IN_CERT_NOT_AFTER_FIELD',
+        'DEPTH_ZERO_SELF_SIGNED_CERT',
+        'SELF_SIGNED_CERT_IN_CHAIN',
+        'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+        'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+        'CERT_CHAIN_TOO_LONG',
+        'CERT_REVOKED',
+        'INVALID_CA',
+        'INVALID_PURPOSE',
+        'CERT_UNTRUSTED',
+        'CERT_REJECTED',
+        'HOSTNAME_MISMATCH',
+      ];
+
+      req.on('error', (e: { code: string }) => {
+        if (certErrorCodes.includes(e.code)) {
+          console.log(
+            e.code,
+            ': The given ICM_BASE_URL',
+            ICM_BASE_URL,
+            "has a certificate problem. Please set 'TRUST_ICM' variable to avoid further errors for all requests to the ICM_BASE_URL - never use this in production!"
+          );
+        } else {
+          console.error(e);
+        }
+      });
+
+      req.end();
+    }
   }
 
   // Express server
@@ -56,16 +140,23 @@ export function app() {
     ngExpressEngine({
       bootstrap: AppServerModule,
       providers: [{ provide: 'SSR_HYBRID', useValue: !!process.env.SSR_HYBRID }],
+      inlineCriticalCss: false,
     })
   );
 
   server.set('view engine', 'html');
-  server.set('views', join(DIST_FOLDER, 'browser'));
+  server.set('views', BROWSER_FOLDER);
 
   if (logging) {
+    const morgan = require('morgan');
+    // see https://github.com/expressjs/morgan#predefined-formats
+    let logFormat = morgan.tiny;
+    if (PM2) {
+      logFormat = `${PM2} ${logFormat}`;
+    }
     server.use(
-      require('morgan')('tiny', {
-        skip: req => req.originalUrl.startsWith('/INTERSHOP/static'),
+      morgan(logFormat, {
+        skip: (req: express.Request) => req.originalUrl.startsWith('/INTERSHOP/static'),
       })
     );
   }
@@ -95,10 +186,33 @@ export function app() {
     );
   }
 
-  // Serve static files from /browser
+  // Serve static files from browser folder
+  server.get(/\/.*\.(js|css)$/, (req, res) => {
+    // remove all parameters
+    const path = req.originalUrl.substring(1).replace(/[;?&].*$/, '');
+
+    fs.readFile(join(BROWSER_FOLDER, path), { encoding: 'utf-8' }, (err, data) => {
+      if (err) {
+        res.sendStatus(404);
+      } else {
+        res.set('Content-Type', `${path.endsWith('css') ? 'text/css' : 'application/javascript'}; charset=UTF-8`);
+        res.send(setDeployUrlInFile(DEPLOY_URL, path, data));
+      }
+    });
+  });
+  server.get(/\/ngsw\.json/, (_, res) => {
+    fs.readFile(join(BROWSER_FOLDER, 'ngsw.json'), { encoding: 'utf-8' }, (err, data) => {
+      if (err) {
+        res.sendStatus(404);
+      } else {
+        res.set('Content-Type', 'application/json; charset=UTF-8');
+        res.send(data);
+      }
+    });
+  });
   server.get(
     '*.*',
-    express.static(join(DIST_FOLDER, 'browser'), {
+    express.static(BROWSER_FOLDER, {
       setHeaders: (res, path) => {
         if (/\.[0-9a-f]{20,}\./.test(path)) {
           // file was output-hashed -> 1y
@@ -107,14 +221,22 @@ export function app() {
           // file should be re-checked more frequently -> 5m
           res.set('Cache-Control', 'public, max-age=300');
         }
+        // add cors headers for required resources
+        if (
+          DEPLOY_URL.startsWith('http') &&
+          ['manifest.webmanifest', 'woff2', 'woff', 'json'].some(match => path.endsWith(match))
+        ) {
+          res.set('access-control-allow-origin', '*');
+        }
       },
     })
   );
 
   const icmProxy = proxy(ICM_BASE_URL, {
     // preserve original path
-    proxyReqPathResolver: req => req.originalUrl,
-    proxyReqOptDecorator: options => {
+    proxyReqPathResolver: (req: express.Request) => req.originalUrl,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    proxyReqOptDecorator: (options: any) => {
       if (process.env.TRUST_ICM) {
         // https://github.com/villadora/express-http-proxy#q-how-to-ignore-self-signed-certificates-
         options.rejectUnauthorized = false;
@@ -173,7 +295,9 @@ export function app() {
           }
           newHtml = newHtml.replace(/<base href="[^>]*>/, `<base href="${baseHref}" />`);
 
-          res.status(res.statusCode).send(newHtml || html);
+          newHtml = setDeployUrlInFile(DEPLOY_URL, req.originalUrl, newHtml);
+
+          res.status(res.statusCode).send(newHtml);
         } else {
           res.status(500).send(err.message);
         }
@@ -194,7 +318,7 @@ export function app() {
       const icmUrlRegex = new RegExp(entry.icm);
       const pwaUrlRegex = new RegExp(entry.pwa);
       if (icmUrlRegex.exec(url) && entry.handledBy === 'pwa') {
-        newUrl = url.replace(icmUrlRegex, '/' + entry.pwaBuild);
+        newUrl = url.replace(icmUrlRegex, `/${entry.pwaBuild}`);
         break;
       } else if (pwaUrlRegex.exec(url) && entry.handledBy === 'icm') {
         const config: { [is: string]: string } = {};
@@ -250,8 +374,37 @@ export function app() {
   }
 
   if (/^(on|1|true|yes)$/i.test(process.env.PROMETHEUS)) {
-    const promBundle = require('express-prom-bundle');
-    server.use('*', promBundle({ buckets: [0.1, 0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 2, 3, 4, 5] }));
+    const axios = require('axios');
+    const onFinished = require('on-finished');
+
+    server.use((req, res, next) => {
+      const start = Date.now();
+      onFinished(res, () => {
+        const duration = Date.now() - start;
+        axios
+          .post('http://localhost:9113/report', {
+            theme: THEME,
+            method: req.method,
+            status: res.statusCode,
+            duration,
+            url: req.originalUrl,
+          })
+          .then((reportRes: { status: number; statusText: string; data: unknown }) => {
+            if (reportRes.status !== 204) {
+              console.error(
+                'ERROR unexpected return from Prometheus:',
+                reportRes.status,
+                reportRes.statusText,
+                reportRes.data
+              );
+            }
+          })
+          .catch((error: Error) => {
+            console.error('ERROR reporting to Prometheus:', error.message);
+          });
+      });
+      next();
+    });
   }
 
   // All regular routes use the Universal engine
@@ -279,16 +432,18 @@ function run() {
 
     console.log(`Node Express server listening on http://${require('os').hostname()}:${PORT}`);
   }
+  console.log('serving static files from', BROWSER_FOLDER);
 }
 
 // Webpack will replace 'require' with '__webpack_require__'
 // '__non_webpack_require__' is a proxy to Node 'require'
 // The below code is to ensure that the server is run only when not requiring the bundle.
+// eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __non_webpack_require__: NodeRequire;
 
 const mainModule = __non_webpack_require__.main;
 
-const moduleFilename = (mainModule && mainModule.filename) || '';
+const moduleFilename = mainModule?.filename || '';
 
 if (moduleFilename === __filename || moduleFilename.includes('iisnode')) {
   run();

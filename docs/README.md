@@ -24,7 +24,8 @@ kb_sync_latest_only
 - [Concept - Localization](./concepts/localization.md)
 - [Concept - SEO](./concepts/search-engine-optimization.md)
 - [Guide - Forms](./guides/forms.md)
-- [Concept - Formly](./guides/formly.md)
+- [Guide - Formly](./guides/formly.md)
+- [Guide - Field Library](./guides/field-library.md)
 - [Concept - Deployment Scenarios for Angular Applications](./concepts/deployment-angular.md)
 - [Concept - Single Sign-On (SSO) for PWA](./concepts/sso.md)
 
@@ -41,6 +42,7 @@ kb_sync_latest_only
 - [Guide - Code Documentation](./guides/code-documentation.md)
 - [Guide - Angular Change Detection](./guides/angular-change-detection.md)
 - [Guide - Data Handling with Mappers](./guides/data-handling-with-mappers.md)
+- [Guide - Working with ESLint](./guides/eslint.md)
 
 ### Customization
 
@@ -63,6 +65,7 @@ kb_sync_latest_only
 - [Concept - Building Blocks of the Intershop PWA](./concepts/pwa-building-blocks.md)
   - [Guide - Building and Running Server-Side Rendering](./guides/ssr-startup.md)
   - [Guide - Building and Running nginx Docker Image](./guides/nginx-startup.md)
+- [Concept - Deploy URL](./concepts/deploy-url.md)
 - [Concept - Multi-Site Handling](./concepts/multi-site-handling.md)
 - [Guide - Multi-Site Configurations](./guides/multi-site-configurations.md)
 - [Concept - Hybrid Approach](./concepts/hybrid-approach.md)
@@ -78,3 +81,4 @@ kb_sync_latest_only
 - [Guide - Extended Product Configurations with Tacton](./guides/tacton-product-configuration.md)
 - [Guide - Monitoring with Prometheus](./guides/prometheus-monitoring.md)
 - [Guide - SSO with Auth0 for PWA](./guides/sso-auth0.md)
+- [Guide - Store Locator with Google Maps](./guides/store-locator.md)

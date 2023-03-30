@@ -1,5 +1,4 @@
 import { Location } from '@angular/common';
-import { Component } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
@@ -44,23 +43,19 @@ describe('Basket Items Effects', () => {
   let location: Location;
 
   beforeEach(() => {
-    @Component({ template: 'dummy' })
-    class DummyComponent {}
-
     basketServiceMock = mock(BasketService);
 
     TestBed.configureTestingModule({
-      declarations: [DummyComponent],
       imports: [
         CoreStoreModule.forTesting(),
         CustomerStoreModule.forTesting('basket'),
-        RouterTestingModule.withRoutes([{ path: '**', component: DummyComponent }]),
+        RouterTestingModule.withRoutes([{ path: '**', children: [] }]),
         ShoppingStoreModule.forTesting('products', 'categories'),
       ],
       providers: [
+        { provide: BasketService, useFactory: () => instance(basketServiceMock) },
         BasketItemsEffects,
         provideMockActions(() => actions$),
-        { provide: BasketService, useFactory: () => instance(basketServiceMock) },
       ],
     });
 
@@ -70,15 +65,17 @@ describe('Basket Items Effects', () => {
   });
 
   describe('addProductToBasket$', () => {
-    it('should accumulate AddProductToBasket to a single AddItemsToBasket action', () => {
+    it('should accumulate AddProductToBasket to a single action', () => {
       store$.dispatch(loadProductSuccess({ product: { sku: 'SKU1', packingUnit: 'pcs.' } as Product }));
       store$.dispatch(loadProductSuccess({ product: { sku: 'SKU2', packingUnit: 'pcs.' } as Product }));
       const action1 = addProductToBasket({ sku: 'SKU1', quantity: 1 });
       const action2 = addProductToBasket({ sku: 'SKU2', quantity: 1 });
       const completion = addItemsToBasket({
         items: [
-          { sku: 'SKU2', quantity: 2, unit: 'pcs.' },
-          { sku: 'SKU1', quantity: 2, unit: 'pcs.' },
+          { sku: 'SKU2', quantity: 1, unit: 'pcs.' },
+          { sku: 'SKU1', quantity: 1, unit: 'pcs.' },
+          { sku: 'SKU2', quantity: 1, unit: 'pcs.' },
+          { sku: 'SKU1', quantity: 1, unit: 'pcs.' },
         ],
       });
       actions$ = hot('        -b-a-b-a--|', { a: action1, b: action2 });
@@ -139,7 +136,7 @@ describe('Basket Items Effects', () => {
 
       const items = [{ sku: 'SKU', quantity: 1, unit: 'pcs.' }];
       const action = addItemsToBasket({ items });
-      const completion = addItemsToBasketSuccess({ info: undefined });
+      const completion = addItemsToBasketSuccess({ info: undefined, items });
       actions$ = hot('-a-a-a', { a: action });
       const expected$ = cold('-c-c-c', { c: completion });
 
@@ -148,7 +145,7 @@ describe('Basket Items Effects', () => {
 
     it('should map invalid request to action of type AddItemsToBasketFail', () => {
       when(basketServiceMock.addItemsToBasket(anything())).thenReturn(
-        throwError(makeHttpError({ message: 'invalid' }))
+        throwError(() => makeHttpError({ message: 'invalid' }))
       );
 
       store$.dispatch(
@@ -187,7 +184,7 @@ describe('Basket Items Effects', () => {
 
   describe('loadBasketAfterAddItemsToBasket$', () => {
     it('should map to action of type LoadBasket if AddItemsToBasketSuccess action triggered', () => {
-      const action = addItemsToBasketSuccess({ info: undefined });
+      const action = addItemsToBasketSuccess({ info: undefined, items: [] });
       const completion = loadBasket();
       actions$ = hot('-a', { a: action });
       const expected$ = cold('-c', { c: completion });
@@ -309,8 +306,7 @@ describe('Basket Items Effects', () => {
         ],
       };
       const action = updateBasketItems(payload);
-      // tslint:disable-next-line: no-null-keyword
-      const completion = updateBasketItemsSuccess({ info: null });
+      const completion = updateBasketItemsSuccess({ info: undefined });
       actions$ = hot('-a-a-a', { a: action });
       const expected$ = cold('-c-c-c', { c: completion });
 
@@ -319,7 +315,7 @@ describe('Basket Items Effects', () => {
 
     it('should map invalid request to action of type UpdateBasketItemsFail', () => {
       when(basketServiceMock.updateBasketItem(anyString(), anything())).thenReturn(
-        throwError(makeHttpError({ message: 'invalid' }))
+        throwError(() => makeHttpError({ message: 'invalid' }))
       );
 
       const payload = {
@@ -398,7 +394,7 @@ describe('Basket Items Effects', () => {
 
     it('should map invalid request to action of type DeleteBasketItemFail', () => {
       when(basketServiceMock.deleteBasketItem(anyString())).thenReturn(
-        throwError(makeHttpError({ message: 'invalid' }))
+        throwError(() => makeHttpError({ message: 'invalid' }))
       );
 
       const itemId = 'BIID';
@@ -426,7 +422,7 @@ describe('Basket Items Effects', () => {
     it('should navigate to basket if interaction has info', fakeAsync(() => {
       actions$ = of(deleteBasketItemSuccess({ info: [{ message: 'INFO' } as BasketInfo] }));
 
-      effects.redirectToBasketIfBasketInteractionHasInfo$.subscribe(noop, fail, noop);
+      effects.redirectToBasketIfBasketInteractionHasInfo$.subscribe({ next: noop, error: fail, complete: noop });
 
       tick(500);
 
@@ -436,7 +432,7 @@ describe('Basket Items Effects', () => {
     it('should not navigate to basket if interaction had no info', fakeAsync(() => {
       actions$ = of(deleteBasketItemSuccess({ info: undefined }));
 
-      effects.redirectToBasketIfBasketInteractionHasInfo$.subscribe(noop, fail, noop);
+      effects.redirectToBasketIfBasketInteractionHasInfo$.subscribe({ next: noop, error: fail, complete: noop });
 
       tick(500);
 

@@ -1,3 +1,4 @@
+import '@angular/common/locales/global/cy';
 import { TestBed } from '@angular/core/testing';
 import { TranslateCompiler, TranslateModule, TranslateService } from '@ngx-translate/core';
 
@@ -16,6 +17,8 @@ describe('Pwa Translate Compiler', () => {
           },
         }),
       ],
+
+      teardown: { destroyAfterEach: false },
     });
 
     translate = TestBed.inject(TranslateService);
@@ -48,7 +51,6 @@ describe('Pwa Translate Compiler', () => {
     });
 
     it('should translate when "0" argument was given', () => {
-      // tslint:disable-next-line: use-shorthand-property-in-object-creation
       expect(translate.instant('plural', { 0: 0 })).toMatchInlineSnapshot(`"0 items"`);
     });
 
@@ -71,7 +73,6 @@ describe('Pwa Translate Compiler', () => {
     });
 
     it('should translate when "0" argument was given', () => {
-      // tslint:disable-next-line: use-shorthand-property-in-object-creation
       expect(translate.instant('plural', { 0: 0 })).toMatchInlineSnapshot(`"Content: 0 items!"`);
     });
 
@@ -161,6 +162,98 @@ describe('Pwa Translate Compiler', () => {
       ${3}  | ${'You have quite enough.'}
     `('should translate when $items was given as argument', ({ items, expected }) => {
       expect(translate.instant('nesting', { items })).toEqual(expected);
+    });
+  });
+
+  describe('with simple translate functionality', () => {
+    beforeEach(() => {
+      translate.set('reuse', 'reusing');
+      translate.set('message', 'We are {{ translate, reuse }} this.');
+    });
+
+    it('should translate when reusing', () => {
+      expect(translate.instant('message')).toMatchInlineSnapshot(`"We are reusing this."`);
+    });
+  });
+
+  describe('with translate functionality and variable', () => {
+    beforeEach(() => {
+      translate.set('key.type', '{{ type, select, =a{A} =b{B} other{something else} }}');
+      translate.set('message', 'You chose {{ type, translate, key.type }}.');
+    });
+
+    it.each`
+      type   | expected
+      ${'a'} | ${'You chose A.'}
+      ${'b'} | ${'You chose B.'}
+      ${'c'} | ${'You chose something else.'}
+    `('should translate when $type was given as argument', ({ type, expected }) => {
+      expect(translate.instant('message', { type })).toEqual(expected);
+    });
+  });
+
+  describe('with translate functionality using variable rename', () => {
+    beforeEach(() => {
+      translate.set('key.type', '{{ t, select, =a{A} =b{B} other{something else} }}');
+      translate.set('message', 'You chose {{ type, translate, key.type, t }}.');
+    });
+
+    it.each`
+      type   | expected
+      ${'a'} | ${'You chose A.'}
+      ${'b'} | ${'You chose B.'}
+      ${'c'} | ${'You chose something else.'}
+    `('should translate when $type was given as argument', ({ type, expected }) => {
+      expect(translate.instant('message', { type })).toEqual(expected);
+    });
+  });
+});
+
+describe('Pwa Translate Compiler', () => {
+  let translate: TranslateService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslateModule.forRoot({
+          compiler: {
+            provide: TranslateCompiler,
+            useClass: PWATranslateCompiler,
+          },
+        }),
+      ],
+
+      teardown: { destroyAfterEach: false },
+    });
+
+    translate = TestBed.inject(TranslateService);
+    translate.setDefaultLang('cy');
+    translate.use('cy');
+  });
+
+  describe('with pluralization in Welsh', () => {
+    beforeEach(() => {
+      translate.set('advanced', '{{items, plural, zero{zero} one{one} two{two} few{few} many{many} other{other}}}');
+    });
+
+    it.each`
+      items | expected
+      ${0}  | ${'zero'}
+      ${1}  | ${'one'}
+      ${2}  | ${'two'}
+      ${3}  | ${'few'}
+      ${4}  | ${'other'}
+      ${5}  | ${'other'}
+      ${6}  | ${'many'}
+      ${7}  | ${'other'}
+      ${8}  | ${'other'}
+      ${9}  | ${'other'}
+      ${10} | ${'other'}
+      ${11} | ${'other'}
+      ${12} | ${'other'}
+      ${13} | ${'other'}
+    `('should detect case "$expected" with $items item(s)', ({ items, expected }) => {
+      expect(translate.instant('advanced', { items })).toEqual(expected);
     });
   });
 });

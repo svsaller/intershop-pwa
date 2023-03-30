@@ -1,5 +1,4 @@
 import { Location } from '@angular/common';
-import { Component } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -19,9 +18,11 @@ import { UserService } from 'ish-core/services/user/user.service';
 import { CoreStoreModule } from 'ish-core/store/core/core-store.module';
 import { displaySuccessMessage } from 'ish-core/store/core/messages';
 import { CustomerStoreModule } from 'ish-core/store/customer/customer-store.module';
+import { ApiTokenService } from 'ish-core/utils/api-token/api-token.service';
 import { makeHttpError } from 'ish-core/utils/dev/api-service-utils';
 import { routerTestNavigatedAction } from 'ish-core/utils/dev/routing';
 
+import { loadPGID } from '.';
 import {
   createUser,
   createUserFail,
@@ -32,6 +33,9 @@ import {
   loadCompanyUserFail,
   loadCompanyUserSuccess,
   loadUserByAPIToken,
+  loadUserCostCenters,
+  loadUserCostCentersFail,
+  loadUserCostCentersSuccess,
   loadUserPaymentMethods,
   loadUserPaymentMethodsFail,
   loadUserPaymentMethodsSuccess,
@@ -60,6 +64,7 @@ describe('User Effects', () => {
   let store$: Store;
   let userServiceMock: UserService;
   let paymentServiceMock: PaymentService;
+  let apiTokenServiceMock: ApiTokenService;
   let router: Router;
   let location: Location;
 
@@ -71,8 +76,6 @@ describe('User Effects', () => {
     user: {},
   } as CustomerUserType;
 
-  @Component({ template: 'dummy' })
-  class DummyComponent {}
   const customer = {
     customerNo: '4711',
     isBusinessCustomer: true,
@@ -81,6 +84,8 @@ describe('User Effects', () => {
   beforeEach(() => {
     userServiceMock = mock(UserService);
     paymentServiceMock = mock(PaymentService);
+    apiTokenServiceMock = mock(ApiTokenService);
+
     when(userServiceMock.signInUser(anything())).thenReturn(of(loginResponseData));
     when(userServiceMock.signInUserByToken(anything())).thenReturn(of(loginResponseData));
     when(userServiceMock.createUser(anything())).thenReturn(of(undefined));
@@ -89,22 +94,24 @@ describe('User Effects', () => {
     when(userServiceMock.updateCustomer(anything())).thenReturn(of(customer));
     when(userServiceMock.getCompanyUserData()).thenReturn(of({ firstName: 'Patricia' } as User));
     when(userServiceMock.requestPasswordReminder(anything())).thenReturn(of({}));
+    when(userServiceMock.getEligibleCostCenters()).thenReturn(of([]));
     when(paymentServiceMock.getUserPaymentMethods(anything())).thenReturn(of([]));
     when(paymentServiceMock.deleteUserPaymentInstrument(anyString(), anyString())).thenReturn(of(undefined));
+    when(apiTokenServiceMock.hasUserApiTokenCookie()).thenReturn(false);
 
     TestBed.configureTestingModule({
-      declarations: [DummyComponent],
       imports: [
         CoreStoreModule.forTesting(['router']),
         CustomerStoreModule.forTesting('user'),
-        RouterTestingModule.withRoutes([{ path: '**', component: DummyComponent }]),
+        RouterTestingModule.withRoutes([{ path: '**', children: [] }]),
       ],
       providers: [
-        UserEffects,
-        provideMockActions(() => actions$),
-        { provide: UserService, useFactory: () => instance(userServiceMock) },
+        { provide: ApiTokenService, useFactory: () => instance(apiTokenServiceMock) },
         { provide: PaymentService, useFactory: () => instance(paymentServiceMock) },
         { provide: PersonalizationService, useFactory: () => instance(mock(PersonalizationService)) },
+        { provide: UserService, useFactory: () => instance(userServiceMock) },
+        provideMockActions(() => actions$),
+        UserEffects,
       ],
     });
 
@@ -137,9 +144,9 @@ describe('User Effects', () => {
       });
     });
 
-    it('should dispatch a LoginUserSuccess action on successful login', () => {
+    it('should dispatch a loadPGID action on successful login', () => {
       const action = loginUser({ credentials: { login: 'dummy', password: 'dummy' } });
-      const completion = loginUserSuccess(loginResponseData);
+      const completion = loadPGID(loginResponseData);
 
       actions$ = hot('-a', { a: action });
       const expected$ = cold('-b', { b: completion });
@@ -150,7 +157,7 @@ describe('User Effects', () => {
     it('should dispatch a LoginUserFail action on failed login', () => {
       const error = makeHttpError({ status: 401, code: 'error' });
 
-      when(userServiceMock.signInUser(anything())).thenReturn(throwError(error));
+      when(userServiceMock.signInUser(anything())).thenReturn(throwError(() => error));
 
       const action = loginUser({ credentials: { login: 'dummy', password: 'dummy' } });
       const completion = loginUserFail({ error });
@@ -183,7 +190,7 @@ describe('User Effects', () => {
 
     it('should dispatch a LoadCompanyUserFail action on failed for LoadCompanyUser', () => {
       const error = makeHttpError({ status: 401, code: 'field' });
-      when(userServiceMock.getCompanyUserData()).thenReturn(throwError(error));
+      when(userServiceMock.getCompanyUserData()).thenReturn(throwError(() => error));
 
       const action = loadCompanyUser();
       const completion = loadCompanyUserFail({ error });
@@ -201,7 +208,7 @@ describe('User Effects', () => {
 
       actions$ = of(action);
 
-      effects.redirectAfterLogin$.subscribe(noop, fail, noop);
+      effects.redirectAfterLogin$.subscribe({ next: noop, error: fail, complete: noop });
 
       tick(500);
 
@@ -217,7 +224,7 @@ describe('User Effects', () => {
 
       actions$ = of(action);
 
-      effects.redirectAfterLogin$.subscribe(noop, fail, noop);
+      effects.redirectAfterLogin$.subscribe({ next: noop, error: fail, complete: noop });
 
       tick(500);
 
@@ -231,7 +238,7 @@ describe('User Effects', () => {
 
       store$.dispatch(loginUserSuccess(loginResponseData));
 
-      effects.redirectAfterLogin$.subscribe(noop, fail, noop);
+      effects.redirectAfterLogin$.subscribe({ next: noop, error: fail, complete: noop });
 
       tick(500);
 
@@ -256,11 +263,11 @@ describe('User Effects', () => {
       });
     });
 
-    it('should dispatch a LoginUserSuccess action on successful user creation', () => {
+    it('should dispatch a loadPGID action on successful user creation', () => {
       const credentials: Credentials = { login: '1234', password: 'xxx' };
 
       const action = createUser({ credentials } as CustomerRegistrationType);
-      const completion = loginUserSuccess({} as CustomerUserType);
+      const completion = loadPGID({} as CustomerUserType);
 
       actions$ = hot('-a', { a: action });
       const expected$ = cold('-b', { b: completion });
@@ -270,7 +277,7 @@ describe('User Effects', () => {
 
     it('should dispatch a CreateUserFail action on failed user creation', () => {
       const error = makeHttpError({ status: 401, code: 'field' });
-      when(userServiceMock.createUser(anything())).thenReturn(throwError(error));
+      when(userServiceMock.createUser(anything())).thenReturn(throwError(() => error));
 
       const action = createUser({} as CustomerRegistrationType);
       const completion = createUserFail({ error });
@@ -333,7 +340,7 @@ describe('User Effects', () => {
 
     it('should dispatch an UpdateUserFail action on failed user update', () => {
       const error = makeHttpError({ status: 401, code: 'field' });
-      when(userServiceMock.updateUser(anything(), anything())).thenReturn(throwError(error));
+      when(userServiceMock.updateUser(anything(), anything())).thenReturn(throwError(() => error));
 
       const action = updateUser({ user: {} as User });
       const completion = updateUserFail({ error });
@@ -400,7 +407,7 @@ describe('User Effects', () => {
 
     it('should dispatch an UpdateUserPasswordFail action on failed user password update', () => {
       when(userServiceMock.updateUserPassword(anything(), anything(), anything(), anyString())).thenReturn(
-        throwError(makeHttpError({ message: 'invalid' }))
+        throwError(() => makeHttpError({ message: 'invalid' }))
       );
 
       const password = '123';
@@ -469,7 +476,9 @@ describe('User Effects', () => {
     });
 
     it('should dispatch an UpdateCustomerFail action on failed company update', () => {
-      when(userServiceMock.updateCustomer(anything())).thenReturn(throwError(makeHttpError({ message: 'invalid' })));
+      when(userServiceMock.updateCustomer(anything())).thenReturn(
+        throwError(() => makeHttpError({ message: 'invalid' }))
+      );
 
       const action = updateCustomer({ customer });
       const completion = updateCustomerFail({ error: makeHttpError({ message: 'invalid' }) });
@@ -485,7 +494,7 @@ describe('User Effects', () => {
     it('should not dispatch UserErrorReset action on router navigation if error is not set', fakeAsync(() => {
       router.navigateByUrl('/any');
 
-      effects.resetUserError$.subscribe(fail, fail, fail);
+      effects.resetUserError$.subscribe({ next: fail, error: fail, complete: fail });
 
       tick(2000);
     }));
@@ -503,7 +512,7 @@ describe('User Effects', () => {
   });
 
   describe('loadUserByAPIToken$', () => {
-    it('should call the user service on LoadUserByAPIToken action and load user on success', done => {
+    it('should call the user service on LoadUserByAPIToken action and set pgid on success', done => {
       when(userServiceMock.signInUserByToken()).thenReturn(
         of({ user: { email: 'test@intershop.de' } } as CustomerUserType)
       );
@@ -513,8 +522,8 @@ describe('User Effects', () => {
       effects.loadUserByAPIToken$.subscribe(action => {
         verify(userServiceMock.signInUserByToken()).once();
         expect(action).toMatchInlineSnapshot(`
-          [User API] Login User Success:
-            user: {"email":"test@intershop.de"}
+        [User Internal] Load PGID:
+          user: {"email":"test@intershop.de"}
         `);
         done();
       });
@@ -526,6 +535,53 @@ describe('User Effects', () => {
       actions$ = hot('a-a-a-', { a: loadUserByAPIToken() });
 
       expect(effects.loadUserByAPIToken$).toBeObservable(cold('------'));
+    });
+  });
+
+  describe('loadUserCostCenters$', () => {
+    beforeEach(() => {
+      store$.dispatch(
+        loginUserSuccess({
+          customer: {
+            isBusinessCustomer: true,
+            customerNo: 'pmiller',
+          },
+          user: { login: 'patricia' } as User,
+        })
+      );
+    });
+
+    it('should call the api service when loadUserCostCenters event is called', done => {
+      const action = loadUserCostCenters();
+      actions$ = of(action);
+      effects.loadUserCostCenters$.subscribe(() => {
+        verify(userServiceMock.getEligibleCostCenters()).once();
+        done();
+      });
+    });
+
+    it('should dispatch a loadUserCostCentersSuccess action on successful', () => {
+      const action = loadUserCostCenters();
+      const completion = loadUserCostCentersSuccess({ costCenters: [] });
+
+      actions$ = hot('-a-a-a', { a: action });
+      const expected$ = cold('-b-b-b', { b: completion });
+
+      expect(effects.loadUserCostCenters$).toBeObservable(expected$);
+    });
+
+    it('should dispatch a loadUserCostCentersFail action on failed', () => {
+      const error = makeHttpError({ status: 401, code: 'error' });
+      when(userServiceMock.getEligibleCostCenters()).thenReturn(throwError(() => error));
+
+      const action = loadUserCostCenters();
+      const completion = loadUserCostCentersFail({
+        error,
+      });
+
+      actions$ = hot('-a-a-a', { a: action });
+      const expected$ = cold('-c-c-c', { c: completion });
+      expect(effects.loadUserCostCenters$).toBeObservable(expected$);
     });
   });
 
@@ -560,7 +616,7 @@ describe('User Effects', () => {
 
     it('should dispatch a LoadUserPaymentMethodsFail action on failed', () => {
       const error = makeHttpError({ status: 401, code: 'error' });
-      when(paymentServiceMock.getUserPaymentMethods(anything())).thenReturn(throwError(error));
+      when(paymentServiceMock.getUserPaymentMethods(anything())).thenReturn(throwError(() => error));
 
       const action = loadUserPaymentMethods();
       const completion = loadUserPaymentMethodsFail({
@@ -608,7 +664,9 @@ describe('User Effects', () => {
 
     it('should dispatch a DeleteUserPaymentFail action on failed', () => {
       const error = makeHttpError({ status: 401, code: 'error' });
-      when(paymentServiceMock.deleteUserPaymentInstrument(anyString(), anyString())).thenReturn(throwError(error));
+      when(paymentServiceMock.deleteUserPaymentInstrument(anyString(), anyString())).thenReturn(
+        throwError(() => error)
+      );
 
       const action = deleteUserPaymentInstrument({ id: 'paymentInstrumentId' });
       const completion = deleteUserPaymentInstrumentFail({
@@ -646,7 +704,7 @@ describe('User Effects', () => {
 
     it('should dispatch a RequestPasswordReminderFail action on failed', () => {
       const error = makeHttpError({ status: 401, code: 'error' });
-      when(userServiceMock.requestPasswordReminder(anything())).thenReturn(throwError(error));
+      when(userServiceMock.requestPasswordReminder(anything())).thenReturn(throwError(() => error));
 
       const action = requestPasswordReminder({ data });
       const completion = requestPasswordReminderFail({
@@ -670,7 +728,7 @@ describe('User Effects', () => {
         'should navigate to profile page after %s',
         fakeAsync((type: string) => {
           actions$ = of({ type });
-          effects.redirectAfterUpdateOnProfileSettings$.subscribe();
+          effects.redirectAfterUpdateOnProfileSettings$.subscribe({ next: noop, error: fail, complete: noop });
           tick(500);
 
           expect(location.path()).toEqual('/account/profile');
@@ -688,7 +746,7 @@ describe('User Effects', () => {
         'should not navigate to profile page after %s',
         fakeAsync((type: string) => {
           actions$ = of({ type });
-          effects.redirectAfterUpdateOnProfileSettings$.subscribe();
+          effects.redirectAfterUpdateOnProfileSettings$.subscribe({ next: noop, error: fail, complete: noop });
           tick(500);
 
           expect(location.path()).toEqual('/any');

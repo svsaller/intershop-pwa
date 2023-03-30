@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ComponentFactoryResolver,
   Injector,
   Input,
   OnChanges,
@@ -20,12 +19,9 @@ import { ContentPageletView } from 'ish-core/models/content-view/content-view.mo
 import { whenTruthy } from 'ish-core/utils/operators';
 import { CMSComponentProvider, CMS_COMPONENT } from 'ish-shared/cms/configurations/injection-keys';
 import { CMSComponent } from 'ish-shared/cms/models/cms-component/cms-component.model';
-import { SfeAdapterService } from 'ish-shared/cms/sfe-adapter/sfe-adapter.service';
-import { SfeMetadataWrapper } from 'ish-shared/cms/sfe-adapter/sfe-metadata-wrapper';
-import { SfeMapper } from 'ish-shared/cms/sfe-adapter/sfe.mapper';
 
 /**
- * The Content Pagelet Container Component renders the pagelet for the given 'pageletId'.
+ * The Content Pagelet Component renders the pagelet for the given 'pageletId'.
  * For the rendering an Angular component is used that has to be provided
  * for the DefinitionQualifiedName of the pagelet.
  *
@@ -37,7 +33,7 @@ import { SfeMapper } from 'ish-shared/cms/sfe-adapter/sfe.mapper';
   templateUrl: './content-pagelet.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContentPageletComponent extends SfeMetadataWrapper implements OnChanges, OnInit, OnDestroy {
+export class ContentPageletComponent implements OnChanges, OnInit, OnDestroy {
   /**
    * The Id of the Pagelet that is to be rendered.
    */
@@ -46,17 +42,9 @@ export class ContentPageletComponent extends SfeMetadataWrapper implements OnCha
   @ViewChild('cmsOutlet', { read: ViewContainerRef, static: true }) cmsOutlet: ViewContainerRef;
 
   private pageletId$ = new ReplaySubject<string>(1);
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
 
-  constructor(
-    private injector: Injector,
-    private componentFactoryResolver: ComponentFactoryResolver,
-    private sfeAdapter: SfeAdapterService,
-    private cmsFacade: CMSFacade,
-    private cdRef: ChangeDetectorRef
-  ) {
-    super();
-  }
+  constructor(private injector: Injector, private cmsFacade: CMSFacade, private cdRef: ChangeDetectorRef) {}
 
   ngOnDestroy() {
     this.destroy$.next();
@@ -72,9 +60,6 @@ export class ContentPageletComponent extends SfeMetadataWrapper implements OnCha
       )
       .subscribe(pagelet => {
         this.mapComponent(pagelet);
-        if (this.sfeAdapter.isInitialized()) {
-          this.setSfeMetadata(SfeMapper.mapPageletViewToSfeMetadata(pagelet));
-        }
         this.cdRef.markForCheck();
       });
   }
@@ -96,9 +81,8 @@ export class ContentPageletComponent extends SfeMetadataWrapper implements OnCha
   }
 
   private createComponent(mappedComponent: CMSComponentProvider) {
-    const factory = this.componentFactoryResolver.resolveComponentFactory(mappedComponent.class);
     this.cmsOutlet.clear();
-    return this.cmsOutlet.createComponent(factory);
+    return this.cmsOutlet.createComponent(mappedComponent.class);
   }
 
   private initializeComponent(instance: CMSComponent, pagelet: ContentPageletView) {

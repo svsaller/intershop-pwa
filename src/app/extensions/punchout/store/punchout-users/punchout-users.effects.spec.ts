@@ -1,5 +1,4 @@
 import { Location } from '@angular/common';
-import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -31,9 +30,6 @@ import {
 } from './punchout-users.actions';
 import { PunchoutUsersEffects } from './punchout-users.effects';
 
-@Component({ template: 'dummy' })
-class DummyComponent {}
-
 describe('Punchout Users Effects', () => {
   let actions$: Observable<Action>;
   let effects: PunchoutUsersEffects;
@@ -42,7 +38,7 @@ describe('Punchout Users Effects', () => {
   let router: Router;
 
   const users = [
-    { id: 'ociUser', login: 'ociuser@test.de', email: 'ociuser@test.de', punchoutType: 'oci' },
+    { id: 'ociUser', login: 'ociuser@test.intershop.de', email: 'ociuser@test.intershop.de', punchoutType: 'oci' },
   ] as PunchoutUser[];
 
   beforeEach(() => {
@@ -53,19 +49,18 @@ describe('Punchout Users Effects', () => {
     when(punchoutService.deleteUser(anything())).thenReturn(of(undefined));
 
     TestBed.configureTestingModule({
-      declarations: [DummyComponent],
       imports: [
         CoreStoreModule.forTesting(['router']),
         RouterTestingModule.withRoutes([
-          { path: 'account/punchout', component: DummyComponent },
-          { path: 'account/punchout/:PunchoutLogin', component: DummyComponent },
-          { path: '**', component: DummyComponent },
+          { path: 'account/punchout', children: [] },
+          { path: 'account/punchout/:PunchoutLogin', children: [] },
+          { path: '**', children: [] },
         ]),
       ],
       providers: [
-        PunchoutUsersEffects,
-        provideMockActions(() => actions$),
         { provide: PunchoutService, useFactory: () => instance(punchoutService) },
+        provideMockActions(() => actions$),
+        PunchoutUsersEffects,
       ],
     });
 
@@ -94,7 +89,7 @@ describe('Punchout Users Effects', () => {
 
     it('should dispatch a loadPunchoutUsersFail action on failed users load', () => {
       const error = makeHttpError({ status: 401, code: 'feld' });
-      when(punchoutService.getUsers(anything())).thenReturn(throwError(error));
+      when(punchoutService.getUsers(anything())).thenReturn(throwError(() => error));
 
       const action = loadPunchoutUsers({ type: 'oci' });
       const completion = loadPunchoutUsersFail({ error });
@@ -108,7 +103,7 @@ describe('Punchout Users Effects', () => {
 
   describe('loadDetailedUser$', () => {
     it('should call the service for retrieving user', done => {
-      router.navigate(['/account/punchout/ociuser@test.de', { format: 'oci' }]);
+      router.navigate(['/account/punchout/ociuser@test.intershop.de', { format: 'oci' }]);
 
       effects.loadDetailedUser$.subscribe(() => {
         verify(punchoutService.getUsers('oci')).once();
@@ -117,12 +112,12 @@ describe('Punchout Users Effects', () => {
     });
 
     it('should retrieve the user when triggered', done => {
-      router.navigate(['/account/punchout', 'ociuser@test.de']);
+      router.navigate(['/account/punchout', 'ociuser@test.intershop.de']);
 
       effects.loadDetailedUser$.subscribe(action => {
         expect(action).toMatchInlineSnapshot(`
           [Punchout API] Load Punchout Users Success:
-            users: [{"id":"ociUser","login":"ociuser@test.de","email":"ociuser@...
+            users: [{"id":"ociUser","login":"ociuser@test.intershop.de","email"...
         `);
         done();
       });
@@ -143,25 +138,25 @@ describe('Punchout Users Effects', () => {
       const action = addPunchoutUser({ user: users[0] });
       actions$ = of(action);
 
-      effects.createPunchoutUser$.pipe(toArray()).subscribe(
-        actions => {
+      effects.createPunchoutUser$.pipe(toArray()).subscribe({
+        next: actions => {
           expect(actions).toMatchInlineSnapshot(`
             [Punchout API] Add Punchout User Success:
-              user: {"id":"ociUser","login":"ociuser@test.de","email":"ociuser@t...
+              user: {"id":"ociUser","login":"ociuser@test.intershop.de","email":...
             [Message] Success Toast:
               message: "account.punchout.user.created.message"
-              messageParams: {"0":"ociuser@test.de"}
+              messageParams: {"0":"ociuser@test.intershop.de"}
           `);
           expect(location.path()).toMatchInlineSnapshot(`"/account/punchout;format=oci"`);
         },
-        fail,
-        done
-      );
+        error: fail,
+        complete: done,
+      });
     });
 
     it('should dispatch a AddPunchoutUserFail action on failed user creation', () => {
       const error = makeHttpError({ status: 401, code: 'feld' });
-      when(punchoutService.createUser(users[0])).thenReturn(throwError(error));
+      when(punchoutService.createUser(users[0])).thenReturn(throwError(() => error));
 
       const action = addPunchoutUser({ user: users[0] });
       const completion = addPunchoutUserFail({ error });
@@ -187,25 +182,25 @@ describe('Punchout Users Effects', () => {
       const action = updatePunchoutUser({ user: users[0] });
       actions$ = of(action);
 
-      effects.updatePunchoutUser$.pipe(toArray()).subscribe(
-        actions => {
+      effects.updatePunchoutUser$.pipe(toArray()).subscribe({
+        next: actions => {
           expect(actions).toMatchInlineSnapshot(`
             [Punchout API] Update Punchout User Success:
-              user: {"id":"ociUser","login":"ociuser@test.de","email":"ociuser@t...
+              user: {"id":"ociUser","login":"ociuser@test.intershop.de","email":...
             [Message] Success Toast:
               message: "account.punchout.user.updated.message"
-              messageParams: {"0":"ociuser@test.de"}
+              messageParams: {"0":"ociuser@test.intershop.de"}
           `);
           expect(location.path()).toMatchInlineSnapshot(`"/account/punchout;format=oci"`);
         },
-        fail,
-        done
-      );
+        error: fail,
+        complete: done,
+      });
     });
 
     it('should dispatch a UpdatePunchoutUserFail action on failed user creation', () => {
       const error = makeHttpError({ status: 401, code: 'feld' });
-      when(punchoutService.updateUser(users[0])).thenReturn(throwError(error));
+      when(punchoutService.updateUser(users[0])).thenReturn(throwError(() => error));
 
       const action = updatePunchoutUser({ user: users[0] });
       const completion = updatePunchoutUserFail({ error });
@@ -243,7 +238,7 @@ describe('Punchout Users Effects', () => {
 
     it('should dispatch a DeletePunchoutUserFail action on failed user deletion', () => {
       const error = makeHttpError({ status: 401, code: 'feld' });
-      when(punchoutService.deleteUser(users[0])).thenReturn(throwError(error));
+      when(punchoutService.deleteUser(users[0])).thenReturn(throwError(() => error));
 
       const action = deletePunchoutUser({ user: users[0] });
       const completion = deletePunchoutUserFail({ error });

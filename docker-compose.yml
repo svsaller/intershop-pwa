@@ -8,10 +8,9 @@ services:
       context: .
       # dockerfile: Dockerfile_noSSR
       args:
-        # configuration: local
-        configuration: production
-        # configuration: local,production
         serviceWorker: 'false'
+        # activeThemes: b2b
+        # activeThemes: b2c
     environment:
       - LOGGING=on
       - ICM_BASE_URL
@@ -19,18 +18,43 @@ services:
       - TRUST_ICM=true
       # - PROMETHEUS=on
       # - MULTI_SITE_LOCALE_MAP={"en_US":"/en","de_DE":"/de","fr_FR":"/fr"}
+
+  # <CDN-Example>
+  # add 127.0.0.1 mypwa.net to your hosts file and
+  # uncomment the following lines
+  #
+  #     - DEPLOY_URL=http://mypwa.net:4222
+  # cdn:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile_noSSR
+  #     args:
+  #       configuration: production
+  #       serviceWorker: 'false'
+  #       deployUrl: http://mypwa.net:4222
+  #   ports:
+  #     - '4222:4200'
+  #
+  # </CDN-Example>
+
   nginx:
     build: nginx
     depends_on:
       - pwa
+    ports:
+      - '4200:80'
+      # - '9113:9113'
     environment:
       UPSTREAM_PWA: 'http://pwa:4200'
       # DEBUG: 1
       CACHE: 0
       PAGESPEED: 0
+      SSR: 1
       # PROMETHEUS: 1
       # COMPRESSION: 0
       # DEVICE_DETECTION: 0
+      # CACHING_IGNORE_PARAMS: |
+      #   params:
       # MULTI_CHANNEL_SOURCE: env:///ASDF?type=application/yaml
       # BASIC_AUTH: 'developer:!InterShop00!'
       # BASIC_AUTH_IP_WHITELIST: |
@@ -47,7 +71,6 @@ services:
           - baseHref: /fr
             channel: default
             lang: fr_FR
-
-    ports:
-      - '4200:80'
-      # - '9113:9113'
+          - baseHref: /b2c
+            channel: default
+            theme: b2c

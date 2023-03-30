@@ -1,14 +1,14 @@
+import { Observable, OperatorFunction } from '@angular-devkit/core/node_modules/rxjs';
+import { switchMap, tap } from '@angular-devkit/core/node_modules/rxjs/operators';
 import { SchematicTestRunner, UnitTestTree } from '@angular-devkit/schematics/testing';
 import { Schema as ModuleOptions } from '@schematics/angular/module/schema';
 import { readFileSync } from 'fs';
-import { Observable, OperatorFunction } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
 
 export function createSchematicRunner() {
   return new SchematicTestRunner('intershop-schematics', require.resolve('../collection.json'));
 }
 
-export function createApplication(schematicRunner: SchematicTestRunner): Observable<UnitTestTree> {
+export function createApplication(schematicRunner: SchematicTestRunner) {
   return schematicRunner
     .runExternalSchematicAsync('@schematics/angular', 'workspace', {
       name: 'workspace',
@@ -25,7 +25,7 @@ export function createApplication(schematicRunner: SchematicTestRunner): Observa
             inlineStyle: false,
             inlineTemplate: false,
             routing: true,
-            style: 'css',
+            style: 'scss',
             skipTests: false,
             skipPackageJson: false,
             prefix: 'ish',
@@ -71,4 +71,9 @@ export function createAppLastRoutingModule(schematicRunner: SchematicTestRunner)
         )
       )
     );
+}
+
+export function componentDecorator(input: string, omitChangeDetection = true) {
+  const decorator = input.match(/@Component.*}\)/s)?.[0]?.replace(/\s+/g, ' ');
+  return omitChangeDetection ? decorator?.replace(' changeDetection: ChangeDetectionStrategy.OnPush,', '') : decorator;
 }

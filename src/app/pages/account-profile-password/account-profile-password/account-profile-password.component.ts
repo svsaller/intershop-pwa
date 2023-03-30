@@ -17,7 +17,7 @@ import { SpecialValidators } from 'ish-shared/forms/validators/special-validator
 
 /**
  * The Account Profile Password Page Component displays a form for changing the user's password
- * see also: {@link AccountProfilePasswordPageContainerComponent}
+ * see also: {@link AccountProfilePasswordPageComponent}
  */
 @Component({
   selector: 'ish-account-profile-password',
@@ -37,15 +37,15 @@ export class AccountProfilePasswordComponent implements OnInit, OnChanges {
     this.fields = [
       {
         key: 'currentPassword',
-        type: 'ish-password-field',
+        type: 'ish-text-input-field',
         templateOptions: {
+          type: 'password',
           required: true,
           hideRequiredMarker: true,
           label: 'account.password.label',
         },
         validation: {
           messages: {
-            required: 'account.update_password.old_password.error.required',
             incorrect: 'account.update_password.old_password.error.incorrect',
           },
         },
@@ -63,12 +63,7 @@ export class AccountProfilePasswordComponent implements OnInit, OnChanges {
             args: { 0: '7' },
           },
 
-          autocomplete: 'new-password',
-        },
-        validation: {
-          messages: {
-            required: 'account.update_password.new_password.error.required',
-          },
+          attributes: { autocomplete: 'new-password' },
         },
       },
       {
@@ -85,7 +80,6 @@ export class AccountProfilePasswordComponent implements OnInit, OnChanges {
         validation: {
           messages: {
             required: 'account.register.password_confirmation.error.default',
-            equalTo: 'account.update_password.confirm_password.error.stringcompare',
           },
         },
       },
@@ -97,7 +91,7 @@ export class AccountProfilePasswordComponent implements OnInit, OnChanges {
   }
 
   handleErrors(c: SimpleChanges) {
-    if (c.error && c.error.currentValue && c.error.currentValue.error && c.error.currentValue.status === 401) {
+    if (c.error?.currentValue?.error && c.error.currentValue.status === 401) {
       this.accountProfilePasswordForm.controls.currentPassword.setErrors({ incorrect: true });
       this.accountProfilePasswordForm.controls.currentPassword.markAsDirty();
       this.accountProfilePasswordForm.controls.currentPassword.markAsTouched();

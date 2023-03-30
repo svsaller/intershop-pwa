@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Store, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
+import { map, startWith, withLatestFrom } from 'rxjs/operators';
 
 import { HttpError } from 'ish-core/models/http-error/http-error.model';
 
@@ -21,7 +22,7 @@ import {
   updateWishlist,
 } from '../store/wishlist';
 
-// tslint:disable:member-ordering
+/* eslint-disable @typescript-eslint/member-ordering */
 @Injectable({ providedIn: 'root' })
 export class WishlistsFacade {
   constructor(private store: Store) {}
@@ -32,6 +33,25 @@ export class WishlistsFacade {
   allWishlistsItemsSkus$: Observable<string[]> = this.store.pipe(select(getAllWishlistsItemsSkus));
   wishlistLoading$: Observable<boolean> = this.store.pipe(select(getWishlistsLoading));
   wishlistError$: Observable<HttpError> = this.store.pipe(select(getWishlistsError));
+
+  wishlistSelectOptions$(filterCurrent = true) {
+    return this.wishlists$.pipe(
+      startWith([] as Wishlist[]),
+      map(wishlists =>
+        wishlists.map(wishlist => ({
+          value: wishlist.id,
+          label: wishlist.title,
+        }))
+      ),
+      withLatestFrom(this.currentWishlist$),
+      map(([wishlistOptions, currentWishlist]) => {
+        if (filterCurrent && currentWishlist) {
+          return wishlistOptions.filter(option => option.value !== currentWishlist.id);
+        }
+        return wishlistOptions;
+      })
+    );
+  }
 
   addWishlist(wishlist: WishlistHeader): void | HttpError {
     this.store.dispatch(createWishlist({ wishlist }));

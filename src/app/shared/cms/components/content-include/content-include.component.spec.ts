@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockComponent } from 'ng-mocks';
-import { EMPTY, of } from 'rxjs';
+import { of } from 'rxjs';
 import { anything, instance, mock, when } from 'ts-mockito';
 
 import { CMSFacade } from 'ish-core/facades/cms.facade';
@@ -8,7 +7,6 @@ import {
   ContentPageletEntryPointView,
   createContentPageletEntryPointView,
 } from 'ish-core/models/content-view/content-view.model';
-import { ContentPageletComponent } from 'ish-shared/cms/components/content-pagelet/content-pagelet.component';
 
 import { ContentIncludeComponent } from './content-include.component';
 
@@ -33,10 +31,9 @@ describe('Content Include Component', () => {
 
     cmsFacade = mock(CMSFacade);
     when(cmsFacade.contentInclude$(anything())).thenReturn(of(include));
-    when(cmsFacade.contentIncludeSfeMetadata$(anything())).thenReturn(EMPTY);
 
     await TestBed.configureTestingModule({
-      declarations: [ContentIncludeComponent, MockComponent(ContentPageletComponent)],
+      declarations: [ContentIncludeComponent],
       providers: [{ provide: CMSFacade, useValue: instance(cmsFacade) }],
     }).compileComponents();
   });

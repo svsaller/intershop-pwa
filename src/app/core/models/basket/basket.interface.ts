@@ -18,6 +18,7 @@ export interface BasketBaseData {
   invoiceToAddress?: string;
   commonShipToAddress?: string;
   commonShippingMethod?: string;
+  costCenter?: string;
   customer?: string;
   user?: string;
   discounts?: {
@@ -45,6 +46,12 @@ export interface BasketBaseData {
   };
   approval?: BasketApproval;
   attributes?: Attribute[];
+  buyer?: {
+    companyName?: string;
+    companyName2?: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface BasketData {

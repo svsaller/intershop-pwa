@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { instance, mock } from 'ts-mockito';
 
 import { Address } from 'ish-core/models/address/address.model';
+import { SelectOption } from 'ish-core/models/select-option/select-option.model';
 import { CoreStoreModule } from 'ish-core/store/core/core-store.module';
 
 import { FormsService } from './forms.service';
@@ -53,15 +54,13 @@ describe('Forms Service', () => {
 
   describe('getAddressOptions', () => {
     it('should return address options if addresses are given', done => {
-      formsService
-        .getAddressOptions(
-          of([
-            { id: '12345', firstName: 'Patricia', lastName: 'Miller', addressLine1: 'Potsdamer Str.', city: 'Berlin' },
-            { id: '67890', firstName: 'Bernhard', lastName: 'Boldner', addressLine1: 'Berliner Str.', city: 'Hamburg' },
-          ] as Address[])
-        )
-        .subscribe(options => {
-          expect(options).toMatchInlineSnapshot(`
+      FormsService.getAddressOptions(
+        of([
+          { id: '12345', firstName: 'Patricia', lastName: 'Miller', addressLine1: 'Potsdamer Str.', city: 'Berlin' },
+          { id: '67890', firstName: 'Bernhard', lastName: 'Boldner', addressLine1: 'Berliner Str.', city: 'Hamburg' },
+        ] as Address[])
+      ).subscribe((options: SelectOption[]) => {
+        expect(options).toMatchInlineSnapshot(`
           Array [
             Object {
               "label": "Patricia Miller, Potsdamer Str., Berlin",
@@ -73,8 +72,14 @@ describe('Forms Service', () => {
             },
           ]
         `);
-          done();
-        });
+        done();
+      });
+    });
+  });
+
+  describe('getCostCenterBudgetPeriodOptions', () => {
+    it('should return budget period options if called', () => {
+      expect(FormsService.getCostCenterBudgetPeriodOptions()).toHaveLength(4);
     });
   });
 });

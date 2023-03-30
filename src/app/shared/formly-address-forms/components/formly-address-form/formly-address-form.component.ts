@@ -1,14 +1,30 @@
 import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { AppFacade } from 'ish-core/facades/app.facade';
 import { Address } from 'ish-core/models/address/address.model';
+import { SelectOption } from 'ish-core/models/select-option/select-option.model';
 import { AddressFormConfigurationProvider } from 'ish-shared/formly-address-forms/configurations/address-form-configuration.provider';
-import { SelectOption } from 'ish-shared/forms/components/select/select.component';
 
+/**
+ * Address Form Component that reconfigures itself when a new country is selected.
+ * Gets field configurations from the `AddressFormConfigurationProvider`.
+ *
+ * @param parentForm - the parent FormGroup that the address form will belong to
+ * @param businessCustomer - whether the address form is for a business customer
+ * @param shortForm - whether the address form is in long or short format
+ * @param prefilledAddress - a collection of key-value pairs that will be used to prefill the form
+ *
+ * @example
+ * <ish-formly-address-form
+      [businessCustomer]="isBusinessCustomer$ | async"
+      [shortForm]="true"
+      [parentForm]="formGroup"
+   ></ish-formly-address-form>
+ */
 @Component({
   selector: 'ish-formly-address-form',
   templateUrl: './formly-address-form.component.html',
@@ -46,11 +62,17 @@ export class FormlyAddressFormComponent implements OnInit, OnChanges {
   }
 
   handleCountryChange(model: { countryCode: string }) {
+    // extract old and new countryCode
     const prevCountryCode = this.countryCode;
     this.countryCode = model.countryCode;
+
     if (model.countryCode !== prevCountryCode) {
       const configuration = this.afcProvider.getConfiguration(model.countryCode, this.businessCustomer, this.shortForm);
-      this.addressForm = new FormGroup({});
+
+      // assign new form, model and fields
+      this.addressForm = new FormGroup({
+        countryCode: new FormControl(''),
+      });
       this.addressModel = {
         countryCode: model.countryCode,
         ...configuration.getModel(this.addressModel),
@@ -61,6 +83,7 @@ export class FormlyAddressFormComponent implements OnInit, OnChanges {
 
       this.addressModel.countryCode = model.countryCode;
       this.addressForm.updateValueAndValidity();
+      this.addressForm.get('countryCode').markAsDirty();
 
       this.parentForm?.setControl('address', this.addressForm);
     }

@@ -1,5 +1,6 @@
 import { createAction } from '@ngrx/store';
 
+import { SkuQuantityType } from 'ish-core/models/product/product.model';
 import { httpError, payload } from 'ish-core/utils/ngrx-creators';
 
 import { QuoteRequestUpdate } from '../../models/quote-request-update/quote-request-update.model';
@@ -48,6 +49,8 @@ export const deleteQuotingEntitySuccess = createAction(
   payload<IdPayloadType>()
 );
 
+export const deleteQuoteFromBasket = createAction('[Quoting] Delete Quote From Basket', payload<IdPayloadType>());
+
 export const rejectQuote = createAction('[Quoting] Reject Quote', payload<IdPayloadType>());
 
 export const rejectQuoteFail = createAction('[Quoting API] Reject Quote Fail', httpError<IdPayloadType>());
@@ -95,7 +98,7 @@ export const createQuoteRequestFromBasketSuccess = createAction(
 
 export const addProductToQuoteRequest = createAction(
   '[Quoting] Add Product To Quote Request',
-  payload<{ sku: string; quantity: number }>()
+  payload<SkuQuantityType>()
 );
 
 export const addProductToQuoteRequestSuccess = createAction(

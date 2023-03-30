@@ -1,14 +1,11 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { ContentPageletView } from 'ish-core/models/content-view/content-view.model';
-import { SfeAdapterService } from 'ish-shared/cms/sfe-adapter/sfe-adapter.service';
-import { SfeMetadataWrapper } from 'ish-shared/cms/sfe-adapter/sfe-metadata-wrapper';
-import { SfeMapper } from 'ish-shared/cms/sfe-adapter/sfe.mapper';
 
 /**
- * The Content Slot Container Component renders the assigned sub pagelets
+ * The Content Slot Component renders the assigned sub pagelets
  * of the identified 'slot' of the given 'pagelet'.
- * By default it is just using the {@link ContentPageletContainerComponent}
+ * By default it is just using the {@link ContentPageletComponent}
  * to render each sub pagelet.
  * If more specific HTML or functionality is needed for the rendering
  * the 'wrapper' flag needs to be used to use the provided HTML for rendering.
@@ -27,7 +24,7 @@ import { SfeMapper } from 'ish-shared/cms/sfe-adapter/sfe.mapper';
   templateUrl: './content-slot.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContentSlotComponent extends SfeMetadataWrapper implements OnChanges {
+export class ContentSlotComponent {
   /**
    * The DefinitionQualifiedName of the slot that should be rendered.
    */
@@ -40,14 +37,4 @@ export class ContentSlotComponent extends SfeMetadataWrapper implements OnChange
    * An optional flag that controls the rendering of the pagelets with the wrapped HTML content.
    */
   @Input() wrapper?: boolean;
-
-  constructor(private sfeAdapter: SfeAdapterService) {
-    super();
-  }
-
-  ngOnChanges() {
-    if (this.pagelet && this.sfeAdapter.isInitialized()) {
-      this.setSfeMetadata(SfeMapper.mapSlotViewToSfeMetadata(this.pagelet, this.slot));
-    }
-  }
 }

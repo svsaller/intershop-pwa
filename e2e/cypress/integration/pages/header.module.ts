@@ -25,11 +25,13 @@ export class HeaderModule {
   }
 
   gotoLoginPage(wait: () => unknown = waitLoadingEnd) {
+    cy.scrollTo('top');
     cy.get('[data-testing-id="user-status-desktop"] .my-account-login').click();
     wait();
   }
 
   gotoRegistrationPage(wait: () => unknown = waitLoadingEnd) {
+    cy.scrollTo('top');
     cy.get('[data-testing-id="user-status-desktop"] .my-account-register').click();
     wait();
   }
@@ -45,12 +47,12 @@ export class HeaderModule {
   }
 
   gotoQuickorder(wait: () => unknown = waitLoadingEnd) {
-    cy.get('a[rel="quick-order"]').click();
+    cy.get('a[rel="quick-order"]:visible').click();
     wait();
   }
 
   logout() {
-    cy.get('[data-testing-id="user-status-desktop"] .my-account-logout').click();
+    cy.get('[data-testing-id="link-logout"]').first().click();
   }
 
   get myAccountLink() {

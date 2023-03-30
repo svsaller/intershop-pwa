@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -16,19 +15,21 @@ import { CategoriesService } from 'ish-core/services/categories/categories.servi
 import { ConfigurationService } from 'ish-core/services/configuration/configuration.service';
 import { CountryService } from 'ish-core/services/country/country.service';
 import { FilterService } from 'ish-core/services/filter/filter.service';
+import { PricesService } from 'ish-core/services/prices/prices.service';
 import { ProductsService } from 'ish-core/services/products/products.service';
 import { PromotionsService } from 'ish-core/services/promotions/promotions.service';
 import { SuggestService } from 'ish-core/services/suggest/suggest.service';
 import { CoreStoreModule } from 'ish-core/store/core/core-store.module';
+import { personalizationStatusDetermined } from 'ish-core/store/customer/user';
 import { makeHttpError } from 'ish-core/utils/dev/api-service-utils';
 import { StoreWithSnapshots, provideStoreSnapshots } from 'ish-core/utils/dev/ngrx-testing';
 import { categoryTree } from 'ish-core/utils/dev/test-data-utils';
 
 import { getCategoryTree, getSelectedCategory } from './categories';
+import { setProductListingPageSize } from './product-listing';
 import { getProductEntities, getSelectedProduct } from './products';
-import { getRecentlyViewedProducts } from './recently';
 import { suggestSearch } from './search';
-import { SHOPPING_STORE_CONFIG, ShoppingStoreModule } from './shopping-store.module';
+import { ShoppingStoreModule } from './shopping-store.module';
 
 const getCategoryIds = createSelector(getCategoryTree, tree => Object.keys(tree.nodes));
 
@@ -42,11 +43,9 @@ describe('Shopping Store', () => {
   let promotionsServiceMock: PromotionsService;
   let suggestServiceMock: SuggestService;
   let filterServiceMock: FilterService;
+  let priceServiceMock: PricesService;
 
   beforeEach(() => {
-    @Component({ template: 'dummy' })
-    class DummyComponent {}
-
     const catA = { uniqueId: 'A', categoryPath: ['A'], name: 'nA' } as Category;
     const catA123 = { uniqueId: 'A.123', categoryPath: ['A', 'A.123'], name: 'nA123' } as Category;
     const catA123456 = {
@@ -72,9 +71,6 @@ describe('Shopping Store', () => {
     } as Promotion;
 
     categoriesServiceMock = mock(CategoriesService);
-    when(categoriesServiceMock.getTopLevelCategories(anyNumber())).thenReturn(
-      of(categoryTree([catA, catA123, catB].map(c => ({ ...c, completenessLevel: 0 }))))
-    );
     when(categoriesServiceMock.getCategory(anything())).thenCall(uniqueId => {
       switch (uniqueId) {
         case 'A':
@@ -89,19 +85,26 @@ describe('Shopping Store', () => {
         case 'A.123':
           return of(
             categoryTree([
+              { ...catA, completenessLevel: 0 },
               { ...catA123, completenessLevel: CategoryCompletenessLevel.Max },
               { ...catA123456, completenessLevel: 1 },
             ])
           );
         case 'A.123.456':
-          return of(categoryTree([{ ...catA123456, completenessLevel: CategoryCompletenessLevel.Max }]));
+          return of(
+            categoryTree([
+              { ...catA, completenessLevel: 0 },
+              { ...catA123, completenessLevel: 0 },
+              { ...catA123456, completenessLevel: CategoryCompletenessLevel.Max },
+            ])
+          );
         default:
-          return throwError(makeHttpError({ message: `error loading category ${uniqueId}` }));
+          return throwError(() => makeHttpError({ message: `error loading category ${uniqueId}` }));
       }
     });
 
     const configurationServiceMock = mock(ConfigurationService);
-    when(configurationServiceMock.getServerConfiguration()).thenReturn(of({}));
+    when(configurationServiceMock.getServerConfiguration()).thenReturn(EMPTY);
 
     const countryServiceMock = mock(CountryService);
     when(countryServiceMock.getCountries()).thenReturn(EMPTY);
@@ -109,9 +112,9 @@ describe('Shopping Store', () => {
     productsServiceMock = mock(ProductsService);
     when(productsServiceMock.getProduct(anyString())).thenCall(sku => {
       if (['P1', 'P2'].find(x => x === sku)) {
-        return of({ sku, name: 'n' + sku });
+        return of({ sku, name: `n${sku}` });
       } else {
-        return throwError(makeHttpError({ message: `error loading product ${sku}` }));
+        return throwError(() => makeHttpError({ message: `error loading product ${sku}` }));
       }
     });
     when(productsServiceMock.getCategoryProducts('A.123.456', anyNumber(), anything(), anyNumber())).thenReturn(
@@ -135,60 +138,65 @@ describe('Shopping Store', () => {
     when(filterServiceMock.getFilterForSearch(anything())).thenReturn(of({} as FilterNavigation));
     when(filterServiceMock.getFilterForCategory(anything())).thenReturn(of({} as FilterNavigation));
 
+    priceServiceMock = mock(PricesService);
+    when(priceServiceMock.getProductPrices(anything())).thenReturn(of([]));
+
     TestBed.configureTestingModule({
-      declarations: [DummyComponent],
       imports: [
-        CoreStoreModule.forTesting(['router', 'configuration'], true),
+        CoreStoreModule.forTesting(['router', 'configuration', 'serverConfig'], true),
         RouterTestingModule.withRoutes([
           {
             path: 'home',
-            component: DummyComponent,
+            children: [],
           },
           {
             path: 'compare',
-            component: DummyComponent,
+            children: [],
           },
           {
             path: 'error',
-            component: DummyComponent,
+            children: [],
             data: { headerType: 'simple' },
           },
           {
             path: 'category/:categoryUniqueId',
-            component: DummyComponent,
+            children: [],
           },
           {
             path: 'category/:categoryUniqueId/product/:sku',
-            component: DummyComponent,
+            children: [],
           },
           {
             path: 'product/:sku',
-            component: DummyComponent,
+            children: [],
           },
           {
             path: 'search/:searchTerm',
-            component: DummyComponent,
+            children: [],
           },
         ]),
         ShoppingStoreModule,
         TranslateModule.forRoot(),
       ],
       providers: [
-        { provide: SHOPPING_STORE_CONFIG, useValue: {} },
-        SelectedProductContextFacade,
-        provideStoreSnapshots(),
         { provide: CategoriesService, useFactory: () => instance(categoriesServiceMock) },
+        { provide: FilterService, useFactory: () => instance(filterServiceMock) },
+        { provide: PricesService, useFactory: () => instance(priceServiceMock) },
         { provide: ProductsService, useFactory: () => instance(productsServiceMock) },
         { provide: PromotionsService, useFactory: () => instance(promotionsServiceMock) },
         { provide: SuggestService, useFactory: () => instance(suggestServiceMock) },
-        { provide: FilterService, useFactory: () => instance(filterServiceMock) },
+        provideStoreSnapshots(),
+        SelectedProductContextFacade,
       ],
     });
 
     store = TestBed.inject(StoreWithSnapshots);
+    store.dispatch(setProductListingPageSize({ itemsPerPage: 9 }));
     router = TestBed.inject(Router);
     TestBed.inject(SelectedProductContextFacade);
     store.reset();
+
+    store.dispatch(personalizationStatusDetermined());
   });
 
   it('should be created', () => {
@@ -203,6 +211,7 @@ describe('Shopping Store', () => {
 
     it('should just load toplevel categories when no specific shopping page is loaded', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /home
         @ngrx/router-store/navigation: /home
         @ngrx/router-store/navigated: /home
@@ -222,9 +231,9 @@ describe('Shopping Store', () => {
       it('should load necessary data when going to a category page', fakeAsync(() => {
         expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
+            "A",
             "A.123",
             "A.123.456",
-            "A",
           ]
         `);
         expect(getProductIds(store.state)).toBeEmpty();
@@ -237,13 +246,7 @@ describe('Shopping Store', () => {
           [Categories Internal] Load Category:
             categoryId: "A.123"
           [Categories API] Load Category Success:
-            categories: tree(A.123,A.123.456)
-          [Categories Internal] Load Category:
-            categoryId: "A"
-          [Viewconf Internal] Set Breadcrumb Data:
-            breadcrumbData: [{"text":"nA123"}]
-          [Categories API] Load Category Success:
-            categories: tree(A,A.123)
+            categories: tree(A,A.123,A.123.456)
           [Viewconf Internal] Set Breadcrumb Data:
             breadcrumbData: [{"text":"nA","link":"/nA-catA"},{"text":"nA123"}]
           @ngrx/router-store/navigated: /category/A.123
@@ -313,6 +316,10 @@ describe('Shopping Store', () => {
             sortableAttributes: []
           [Filter API] Load Filter Success:
             filterNavigation: {}
+          [Product Price Internal] Load Product Prices:
+            skus: ["P2"]
+          [Products API] Load Product Prices Success:
+            prices: []
         `);
       }));
 
@@ -327,14 +334,15 @@ describe('Shopping Store', () => {
           expect(store.actionsArray()).toMatchInlineSnapshot(`
             @ngrx/router-store/request: /product/P2
             @ngrx/router-store/navigation: /product/P2
-            [Recently Viewed Internal] Add Product to Recently:
-              sku: "P2"
-              group: undefined
             [Products Internal] Load Product:
               sku: "P2"
             [Products API] Load Product Success:
               product: {"sku":"P2","name":"nP2"}
+            [Product Price Internal] Load Product Prices:
+              skus: ["P2"]
             @ngrx/router-store/navigated: /product/P2
+            [Products API] Load Product Prices Success:
+              prices: []
           `);
         }));
       });
@@ -350,9 +358,9 @@ describe('Shopping Store', () => {
     it('should load necessary data when going to a category page', fakeAsync(() => {
       expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
         Array [
+          "A",
           "A.123",
           "A.123.456",
-          "A",
         ]
       `);
       expect(getProductIds(store.state)).toBeEmpty();
@@ -360,16 +368,13 @@ describe('Shopping Store', () => {
 
     it('should have toplevel loading and category loading actions when going to a category page', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /category/A.123
         @ngrx/router-store/navigation: /category/A.123
         [Categories Internal] Load Category:
           categoryId: "A.123"
         [Categories API] Load Category Success:
-          categories: tree(A.123,A.123.456)
-        [Categories Internal] Load Category:
-          categoryId: "A"
-        [Categories API] Load Category Success:
-          categories: tree(A,A.123)
+          categories: tree(A,A.123,A.123.456)
         @ngrx/router-store/navigated: /category/A.123
         [Viewconf Internal] Set Breadcrumb Data:
           breadcrumbData: [{"text":"nA","link":"/nA-catA"},{"text":"nA123"}]
@@ -386,9 +391,9 @@ describe('Shopping Store', () => {
       it('should not load anything additionally when going to compare page', fakeAsync(() => {
         expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
+            "A",
             "A.123",
             "A.123.456",
-            "A",
           ]
         `);
         expect(getProductIds(store.state)).toBeEmpty();
@@ -418,9 +423,9 @@ describe('Shopping Store', () => {
     it('should load all products and required categories when going to a family page', fakeAsync(() => {
       expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
-            "A.123.456",
             "A",
             "A.123",
+            "A.123.456",
           ]
         `);
       expect(getProductIds(store.state)).toEqual(['P1', 'P2']);
@@ -428,20 +433,13 @@ describe('Shopping Store', () => {
 
     it('should have all required actions when going to a family page', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /category/A.123.456
         @ngrx/router-store/navigation: /category/A.123.456
         [Categories Internal] Load Category:
           categoryId: "A.123.456"
         [Categories API] Load Category Success:
-          categories: tree(A.123.456)
-        [Categories Internal] Load Category:
-          categoryId: "A"
-        [Categories Internal] Load Category:
-          categoryId: "A.123"
-        [Categories API] Load Category Success:
-          categories: tree(A,A.123)
-        [Categories API] Load Category Success:
-          categories: tree(A.123,A.123.456)
+          categories: tree(A,A.123,A.123.456)
         @ngrx/router-store/navigated: /category/A.123.456
         [Product Listing] Load More Products:
           id: {"type":"category","value":"A.123.456"}
@@ -469,11 +467,13 @@ describe('Shopping Store', () => {
           sortableAttributes: []
         [Filter API] Load Filter Success:
           filterNavigation: {}
+        [Product Price Internal] Load Product Prices:
+          skus: ["P1"]
+        [Product Price Internal] Load Product Prices:
+          skus: ["P2"]
+        [Products API] Load Product Prices Success:
+          prices: []
       `);
-    }));
-
-    it('should not put anything in recently viewed products when going to a family page', fakeAsync(() => {
-      expect(getRecentlyViewedProducts(store.state)).toBeEmpty();
     }));
 
     describe('and clicking a product', () => {
@@ -487,19 +487,16 @@ describe('Shopping Store', () => {
         expect(store.actionsArray()).toMatchInlineSnapshot(`
           @ngrx/router-store/request: /category/A.123.456/product/P1
           @ngrx/router-store/navigation: /category/A.123.456/product/P1
-          [Recently Viewed Internal] Add Product to Recently:
-            sku: "P1"
-            group: undefined
           [Products Internal] Load Product:
             sku: "P1"
           [Products API] Load Product Success:
             product: {"sku":"P1","name":"nP1"}
+          [Product Price Internal] Load Product Prices:
+            skus: ["P1"]
           @ngrx/router-store/navigated: /category/A.123.456/product/P1
+          [Products API] Load Product Prices Success:
+            prices: []
         `);
-      }));
-
-      it('should add the product to recently viewed products when going to product detail page', fakeAsync(() => {
-        expect(getRecentlyViewedProducts(store.state)).toEqual(['P1']);
       }));
 
       describe('and and going back to the family page', () => {
@@ -565,6 +562,10 @@ describe('Shopping Store', () => {
             sortableAttributes: []
           [Filter API] Load Filter Success:
             filterNavigation: {}
+          [Product Price Internal] Load Product Prices:
+            skus: ["P2"]
+          [Products API] Load Product Prices Success:
+            prices: []
         `);
       }));
 
@@ -588,17 +589,34 @@ describe('Shopping Store', () => {
               filters: undefined
               sorting: undefined
               page: undefined
-            [Product Listing Internal] Set Product Listing Pages:
-              id: {"type":"category","value":"A.123.456"}
+            [Products Internal] Load Products for Category:
+              categoryId: "A.123.456"
+              page: undefined
+              sorting: undefined
             [Filter Internal] Load Filter For Category:
               uniqueId: "A.123.456"
+            [Products API] Load Product Success:
+              product: {"sku":"P1"}
+            [Products API] Load Product Success:
+              product: {"sku":"P2"}
+            [Product Listing Internal] Set Product Listing Pages:
+              1: ["P1","P2"]
+              id: {"type":"category","value":"A.123.456"}
+              itemCount: 2
+              sortableAttributes: []
             [Filter API] Load Filter Success:
               filterNavigation: {}
+            [Product Price Internal] Load Product Prices:
+              skus: ["P1"]
+            [Product Price Internal] Load Product Prices:
+              skus: ["P2"]
             @ngrx/router-store/navigated: /category/A.123.456
             [Product Listing] Load More Products:
               id: {"type":"category","value":"A.123.456"}
             [Viewconf Internal] Set Breadcrumb Data:
               breadcrumbData: [{"text":"nA","link":"/nA-catA"},{"text":"nA123","link":"/nA...
+            [Products API] Load Product Prices Success:
+              prices: []
           `);
         }));
       });
@@ -614,9 +632,9 @@ describe('Shopping Store', () => {
       it('should not load anything additionally when going to compare page', fakeAsync(() => {
         expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
-            "A.123.456",
             "A",
             "A.123",
+            "A.123.456",
           ]
         `);
         expect(getProductIds(store.state)).toEqual(['P1', 'P2']);
@@ -646,9 +664,9 @@ describe('Shopping Store', () => {
     it('should load the product and its required categories when going to a product page', fakeAsync(() => {
       expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
-            "A.123.456",
             "A",
             "A.123",
+            "A.123.456",
           ]
         `);
       expect(getProductIds(store.state)).toEqual(['P1']);
@@ -656,33 +674,23 @@ describe('Shopping Store', () => {
 
     it('should trigger required load actions when going to a product page', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /category/A.123.456/product/P1
         @ngrx/router-store/navigation: /category/A.123.456/product/P1
         [Categories Internal] Load Category:
           categoryId: "A.123.456"
         [Categories API] Load Category Success:
-          categories: tree(A.123.456)
+          categories: tree(A,A.123,A.123.456)
         [Products Internal] Load Product:
           sku: "P1"
-        [Categories Internal] Load Category:
-          categoryId: "A"
-        [Categories Internal] Load Category:
-          categoryId: "A.123"
         [Products API] Load Product Success:
           product: {"sku":"P1","name":"nP1"}
-        [Categories API] Load Category Success:
-          categories: tree(A,A.123)
-        [Categories API] Load Category Success:
-          categories: tree(A.123,A.123.456)
-        [Recently Viewed Internal] Add Product to Recently:
-          sku: "P1"
-          group: undefined
+        [Product Price Internal] Load Product Prices:
+          skus: ["P1"]
         @ngrx/router-store/navigated: /category/A.123.456/product/P1
+        [Products API] Load Product Prices Success:
+          prices: []
       `);
-    }));
-
-    it('should put the product to recently viewed products when going to product detail page', fakeAsync(() => {
-      expect(getRecentlyViewedProducts(store.state)).toEqual(['P1']);
     }));
 
     describe('and and going back to the family page', () => {
@@ -695,9 +703,9 @@ describe('Shopping Store', () => {
       it('should load the sibling products when they are not yet loaded', fakeAsync(() => {
         expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
-            "A.123.456",
             "A",
             "A.123",
+            "A.123.456",
           ]
         `);
         expect(getProductIds(store.state)).toEqual(['P1', 'P2']);
@@ -733,16 +741,18 @@ describe('Shopping Store', () => {
             sortableAttributes: []
           [Filter API] Load Filter Success:
             filterNavigation: {}
+          [Product Price Internal] Load Product Prices:
+            skus: ["P1"]
+          [Product Price Internal] Load Product Prices:
+            skus: ["P2"]
           @ngrx/router-store/navigated: /category/A.123.456
           [Product Listing] Load More Products:
             id: {"type":"category","value":"A.123.456"}
           [Viewconf Internal] Set Breadcrumb Data:
             breadcrumbData: [{"text":"nA","link":"/nA-catA"},{"text":"nA123","link":"/nA...
+          [Products API] Load Product Prices Success:
+            prices: []
         `);
-      }));
-
-      it('should not put anything additionally to recently viewed products when going back', fakeAsync(() => {
-        expect(getRecentlyViewedProducts(store.state)).toEqual(['P1']);
       }));
     });
 
@@ -756,9 +766,9 @@ describe('Shopping Store', () => {
       it('should not load anything additionally when going to compare page', fakeAsync(() => {
         expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
           Array [
-            "A.123.456",
             "A",
             "A.123",
+            "A.123.456",
           ]
         `);
         expect(getProductIds(store.state)).toEqual(['P1']);
@@ -792,16 +802,18 @@ describe('Shopping Store', () => {
 
     it('should trigger required load actions when going to a product page', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /product/P1
         @ngrx/router-store/navigation: /product/P1
         [Products Internal] Load Product:
           sku: "P1"
         [Products API] Load Product Success:
           product: {"sku":"P1","name":"nP1"}
-        [Recently Viewed Internal] Add Product to Recently:
-          sku: "P1"
-          group: undefined
+        [Product Price Internal] Load Product Prices:
+          skus: ["P1"]
         @ngrx/router-store/navigated: /product/P1
+        [Products API] Load Product Prices Success:
+          prices: []
       `);
     }));
 
@@ -841,9 +853,9 @@ describe('Shopping Store', () => {
     it('should load only family page content and redirect to error when product was not found', fakeAsync(() => {
       expect(getCategoryIds(store.state)).toMatchInlineSnapshot(`
         Array [
-          "A.123.456",
           "A",
           "A.123",
+          "A.123.456",
         ]
       `);
       expect(getProductIds(store.state)).toBeEmpty();
@@ -851,25 +863,18 @@ describe('Shopping Store', () => {
 
     it('should trigger required load actions when going to a product page with invalid product sku', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /category/A.123.456/product/P3
         @ngrx/router-store/navigation: /category/A.123.456/product/P3
         [Categories Internal] Load Category:
           categoryId: "A.123.456"
         [Categories API] Load Category Success:
-          categories: tree(A.123.456)
+          categories: tree(A,A.123,A.123.456)
         [Products Internal] Load Product:
           sku: "P3"
-        [Categories Internal] Load Category:
-          categoryId: "A"
-        [Categories Internal] Load Category:
-          categoryId: "A.123"
         [Products API] Load Product Fail:
           error: {"name":"HttpErrorResponse","message":"error loading product...
           sku: "P3"
-        [Categories API] Load Category Success:
-          categories: tree(A,A.123)
-        [Categories API] Load Category Success:
-          categories: tree(A.123,A.123.456)
         @ngrx/router-store/cancel: /category/A.123.456/product/P3
         @ngrx/router-store/request: /error
         @ngrx/router-store/navigation: /error
@@ -880,10 +885,6 @@ describe('Shopping Store', () => {
     it('should not have a selected product or category when redirected to error page', fakeAsync(() => {
       expect(getSelectedCategory(store.state)).toBeUndefined();
       expect(getSelectedProduct(store.state)).toBeUndefined();
-    }));
-
-    it('should not put anything to recently viewed products when invalid product was selected', fakeAsync(() => {
-      expect(getRecentlyViewedProducts(store.state)).toBeEmpty();
     }));
   });
 
@@ -900,6 +901,7 @@ describe('Shopping Store', () => {
 
     it('should trigger required load actions when going to a category page with invalid category uniqueId', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /category/A.123.XXX
         @ngrx/router-store/navigation: /category/A.123.XXX
         [Categories Internal] Load Category:
@@ -931,6 +933,7 @@ describe('Shopping Store', () => {
 
     it('should trigger required actions when searching', fakeAsync(() => {
       expect(store.actionsArray()).toMatchInlineSnapshot(`
+        [User Internal] Personalization Status Determined
         @ngrx/router-store/request: /search/something
         @ngrx/router-store/navigation: /search/something
         @ngrx/router-store/navigated: /search/something
@@ -958,6 +961,10 @@ describe('Shopping Store', () => {
           sortableAttributes: []
         [Filter API] Load Filter Success:
           filterNavigation: {}
+        [Product Price Internal] Load Product Prices:
+          skus: ["P2"]
+        [Products API] Load Product Prices Success:
+          prices: []
       `);
     }));
   });

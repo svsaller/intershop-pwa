@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { Store, createSelector, select } from '@ngrx/store';
-import { Subject, merge } from 'rxjs';
-import { debounceTime, map, sample, switchMap, take, tap } from 'rxjs/operators';
+import { Subject, combineLatest, merge } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, sample, switchMap, take, tap } from 'rxjs/operators';
 
 import { Address } from 'ish-core/models/address/address.model';
 import { Attribute } from 'ish-core/models/attribute/attribute.model';
@@ -42,27 +43,30 @@ import {
   setBasketPayment,
   startCheckout,
   updateBasketAddress,
+  updateBasketCostCenter,
   updateBasketItems,
   updateBasketShippingMethod,
   updateConcardisCvcLastUpdated,
 } from 'ish-core/store/customer/basket';
 import { getOrdersError, getSelectedOrder } from 'ish-core/store/customer/orders';
-import { getLoggedInUser } from 'ish-core/store/customer/user';
+import { getLoggedInUser, getUserCostCenters, loadUserCostCenters } from 'ish-core/store/customer/user';
 import { whenFalsy, whenTruthy } from 'ish-core/utils/operators';
 
-// tslint:disable:member-ordering
+/* eslint-disable @typescript-eslint/member-ordering */
 @Injectable({ providedIn: 'root' })
 export class CheckoutFacade {
   private basketChangeInternal$ = new Subject<void>();
 
-  constructor(private store: Store) {
-    this.store
-      .pipe(
-        select(getBasketLastTimeProductAdded),
-        whenTruthy(),
-        sample(this.basketLoading$.pipe(debounceTime(500), whenFalsy()))
-      )
-      .subscribe(() => this.basketChangeInternal$.next());
+  constructor(private store: Store, @Inject(PLATFORM_ID) platformId: string) {
+    if (isPlatformBrowser(platformId)) {
+      this.store
+        .pipe(
+          select(getBasketLastTimeProductAdded),
+          whenTruthy(),
+          sample(this.basketLoading$.pipe(debounceTime(500), whenFalsy()))
+        )
+        .subscribe(() => this.basketChangeInternal$.next());
+    }
   }
 
   checkoutStep$ = this.store.pipe(select(selectRouteData<number>('checkoutStep')));
@@ -83,12 +87,14 @@ export class CheckoutFacade {
   basketInfo$ = this.store.pipe(select(getBasketInfo));
   basketLoading$ = this.store.pipe(select(getBasketLoading));
   basketValidationResults$ = this.store.pipe(select(getBasketValidationResults));
-  basketItemCount$ = this.basket$.pipe(map(basket => (basket && basket.totalProductQuantity) || 0));
-  basketItemTotal$ = this.basket$.pipe(map(basket => basket && basket.totals && basket.totals.itemTotal));
-  basketLineItems$ = this.basket$.pipe(
-    map(basket => (basket && basket.lineItems && basket.lineItems.length ? basket.lineItems : undefined))
-  );
+  basketItemCount$ = this.basket$.pipe(map(basket => basket?.totalProductQuantity || 0));
+  basketItemTotal$ = this.basket$.pipe(map(basket => basket?.totals?.itemTotal));
+  basketLineItems$ = this.basket$.pipe(map(basket => (basket?.lineItems?.length ? basket.lineItems : undefined)));
   submittedBasket$ = this.store.pipe(select(getSubmittedBasket));
+  basketMaxItemQuantity$ = this.store.pipe(
+    select(getServerConfigParameter<number>('basket.maxItemQuantity')),
+    map(qty => qty || 100)
+  );
 
   loadBasketWithId(basketId: string) {
     this.store.dispatch(loadBasketWithId({ basketId }));
@@ -110,6 +116,10 @@ export class CheckoutFacade {
     this.store.dispatch(updateBasketShippingMethod({ shippingId }));
   }
 
+  updateBasketCostCenter(costCenter: string) {
+    this.store.dispatch(updateBasketCostCenter({ costCenter }));
+  }
+
   setBasketCustomAttribute(attribute: Attribute): void {
     this.store.dispatch(setBasketAttribute({ attribute }));
   }
@@ -126,12 +136,84 @@ export class CheckoutFacade {
 
   // SHIPPING
 
+  isDesiredDeliveryDateEnabled$ = this.store.pipe(
+    select(getServerConfigParameter<boolean>('shipping.desiredDeliveryDate'))
+  );
+
+  isDesiredDeliveryExcludeSaturday$ = this.store.pipe(
+    select(getServerConfigParameter<boolean>('shipping.deliveryExcludeSaturday'))
+  );
+
+  isDesiredDeliveryExcludeSunday$ = this.store.pipe(
+    select(getServerConfigParameter<boolean>('shipping.deliveryExcludeSunday'))
+  );
+
+  desiredDeliveryDaysMax$ = this.store.pipe(
+    select(getServerConfigParameter<number>('shipping.desiredDeliveryDaysMax'))
+  );
+
+  desiredDeliveryDaysMin$ = this.store.pipe(
+    select(getServerConfigParameter<number>('shipping.desiredDeliveryDaysMin'))
+  );
+
   eligibleShippingMethods$() {
     return this.basket$.pipe(
       whenTruthy(),
       take(1),
       tap(() => this.store.dispatch(loadBasketEligibleShippingMethods())),
       switchMap(() => this.store.pipe(select(getBasketEligibleShippingMethods)))
+    );
+  }
+  eligibleShippingMethodsNoFetch$ = this.store.pipe(select(getBasketEligibleShippingMethods));
+
+  shippingMethod$(id: string) {
+    return this.eligibleShippingMethodsNoFetch$.pipe(
+      map(methods => (methods?.length ? methods.find(method => method.id === id) : undefined))
+    );
+  }
+
+  getValidShippingMethod$() {
+    return combineLatest([
+      this.basket$.pipe(whenTruthy()),
+      this.eligibleShippingMethodsNoFetch$.pipe(whenTruthy()),
+    ]).pipe(
+      // compare baskets only by shippingMethod
+      distinctUntilChanged(
+        // spell-checker: words prevbasket prevship curbasket curship
+        ([prevbasket, prevship], [curbasket, curship]) =>
+          prevbasket.commonShippingMethod?.id === curbasket.commonShippingMethod?.id && prevship === curship
+      ),
+      map(([basket, shippingMethods]) => {
+        // if the basket has a  shipping method and it's valid, do nothing
+        if (shippingMethods.find(method => method.id === basket.commonShippingMethod?.id)) {
+          return basket.commonShippingMethod.id;
+        }
+        // if there is no shipping method at basket or this basket shipping method is not valid anymore select automatically the 1st valid shipping method
+        if (
+          shippingMethods?.length &&
+          (!basket?.commonShippingMethod?.id ||
+            !shippingMethods.find(method => method.id === basket.commonShippingMethod?.id ?? ''))
+        ) {
+          return shippingMethods[0].id;
+        }
+      }),
+      whenTruthy(),
+      distinctUntilChanged()
+    );
+  }
+
+  // COST CENTER
+
+  eligibleCostCenterSelectOptions$(selectRole?: string) {
+    this.store.dispatch(loadUserCostCenters());
+    return this.store.pipe(
+      select(getUserCostCenters),
+      whenTruthy(),
+      map(costCenters =>
+        costCenters
+          .filter(costCenter => costCenter.roles.includes(selectRole ? selectRole : 'Buyer'))
+          .map(c => ({ label: `${c.id} ${c.name}`, value: c.id }))
+      )
     );
   }
 
